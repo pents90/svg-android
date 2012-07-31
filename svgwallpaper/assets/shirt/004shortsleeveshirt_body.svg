@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 14.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 43363)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="content" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="500px" height="500px" viewBox="0 0 500 500" enable-background="new 0 0 500 500" xml:space="preserve">
+<rect id="position" x="0.5" y="0.5" display="none" fill="none" stroke="#000000" width="499" height="499"/>
+<g id="body">
+	<polygon fill="#E5E5E5" points="288.473,174.455 258.393,195.08 249.665,215.706 241.036,195.177 210.854,174.455 112.694,174.455 
+		112.694,480.51 388.5,480.51 388.5,174.455 	"/>
+	<polygon fill="#D3D3D3" points="259.161,203.47 300.482,221.058 306.277,174.455 288.571,174.455 258.393,195.08 255.946,200.901 
+		255.946,200.901 249.802,213.988 243.561,200.901 243.561,200.901 241.134,195.08 210.955,174.455 193.249,174.455 
+		201.043,223.058 240.315,203.691 248.646,219.959 248.646,480.412 250.878,480.412 250.878,220.01 	"/>
+	<polygon fill="#EFEFEF" points="258.486,194.988 296.169,211.988 301.014,174.455 288.571,174.455 	"/>
+	<polygon fill="#EFEFEF" points="210.955,174.455 198.318,174.455 205.161,213.988 241.134,195.08 	"/>
+	<circle fill="#BCBCBC" cx="264.5" cy="233" r="4"/>
+	<circle fill="#BCBCBC" cx="264.5" cy="280.438" r="4"/>
+	<circle fill="#BCBCBC" cx="264.5" cy="327.874" r="4"/>
+	<circle fill="#BCBCBC" cx="264.5" cy="375.311" r="4"/>
+	<circle fill="#BCBCBC" cx="264.5" cy="422.748" r="4"/>
+	<circle fill="#BCBCBC" cx="264.5" cy="470.185" r="4"/>
+	<path fill="#EFEFEF" d="M158.323,269.389c0,1.654,1.344,3,3,3h29.326c1.657,0,3-1.346,3-3v-29.328c0-1.657-1.343-3-3-3h-29.326
+		c-1.656,0-3,1.343-3,3V269.389z"/>
+	<path fill="#EFEFEF" d="M338.97,269.389c0,1.654-1.343,3-3,3h-29.325c-1.658,0-3-1.346-3-3v-29.328c0-1.657,1.342-3,3-3h29.325
+		c1.657,0,3,1.343,3,3V269.389z"/>
+</g>
+</svg>
