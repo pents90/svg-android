@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Stack;
+
 
 /*
 
@@ -109,6 +111,59 @@ public class SVGParser {
      * Parse SVG data from an input stream, replacing a single color with another color.
      *
      * @param svgData      the input stream, with SVG XML data in UTF-8 character encoding.
+     * @param idToColor    map ID to color or SVGParser.hide.
+     * @return the parsed SVG.
+     * @throws SVGParseException if there is an error while parsing.
+     */
+    public static SVG getSVGFromInputStream(InputStream svgData, HashMap<String, Integer> idToColor) throws SVGParseException {
+        return SVGParser.parse(svgData, 0, 0, false, idToColor);
+    }
+
+    /**
+     * Parse SVG data from a string.
+     *
+     * @param svgData      the string containing SVG XML data.
+     * @param idToColor    map ID to color or SVGParser.hide.
+     * @return the parsed SVG.
+     * @throws SVGParseException if there is an error while parsing.
+     */
+    public static SVG getSVGFromString(String svgData, HashMap<String, Integer> idToColor) throws SVGParseException {
+        return SVGParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false, idToColor);
+    }
+
+    /**
+     * Parse SVG data from an Android application resource.
+     *
+     * @param resources    the Android context
+     * @param resId        the ID of the raw resource SVG.
+     * @param idToColor    map ID to color or SVGParser.hide.
+     * @return the parsed SVG.
+     * @throws SVGParseException if there is an error while parsing.
+     */
+    public static SVG getSVGFromResource(Resources resources, int resId, HashMap<String, Integer> idToColor) throws SVGParseException {
+        return SVGParser.parse(resources.openRawResource(resId), 0, 0, false, idToColor);
+    }
+
+    /**
+     * Parse SVG data from an Android application asset.
+     *
+     * @param assetMngr    the Android asset manager.
+     * @param svgPath      the path to the SVG file in the application's assets.
+     * @param idToColor    map ID to color or SVGParser.hide.
+     * @return the parsed SVG.
+     * @throws SVGParseException if there is an error while parsing.
+     * @throws IOException       if there was a problem reading the file.
+     */
+    public static SVG getSVGFromAsset(AssetManager assetMngr, String svgPath, HashMap<String, Integer> idToColor) throws SVGParseException, IOException {
+        InputStream inputStream = assetMngr.open(svgPath);
+        SVG svg = getSVGFromInputStream(inputStream, idToColor);
+        inputStream.close();
+        return svg;
+    }
+    /**
+     * Parse SVG data from an input stream, replacing a single color with another color.
+     *
+     * @param svgData      the input stream, with SVG XML data in UTF-8 character encoding.
      * @param searchColor  the color in the SVG to replace.
      * @param replaceColor the color with which to replace the search color.
      * @return the parsed SVG.
@@ -163,6 +218,7 @@ public class SVGParser {
         return svg;
     }
 
+
     /**
      * Parses a single SVG path and returns it as a <code>android.graphics.Path</code> object.
      * An example path is <code>M250,150L150,350L350,350Z</code>, which draws a triangle.
@@ -174,6 +230,10 @@ public class SVGParser {
     }
 
     private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SVGParseException {
+    	return parse(in, searchColor, replaceColor, whiteMode, null);
+    }
+    
+    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode, HashMap<String, Integer> idToColor) throws SVGParseException {
 //        Util.debug("Parsing SVG...");
         try {
             long start = System.currentTimeMillis();
@@ -183,10 +243,11 @@ public class SVGParser {
             final Picture picture = new Picture();
             SVGHandler handler = new SVGHandler(picture);
             handler.setColorSwap(searchColor, replaceColor);
+            handler.setIdToColor(idToColor);
             handler.setWhiteMode(whiteMode);
             xr.setContentHandler(handler);
             xr.parse(new InputSource(in));
-//        Util.debug("Parsing complete in " + (System.currentTimeMillis() - start) + " millis.");
+//        Log.d("SVG PARSER","Parsing complete in " + (System.currentTimeMillis() - start) + " ms.");
             SVG result = new SVG(picture, handler.bounds);
             // Skip bounds if it was an empty pic
             if (!Float.isInfinite(handler.limits.top)) {
@@ -316,7 +377,7 @@ public class SVGParser {
             NumberParse np = parseNumbers(s.substring("scale(".length()));
             if (np.numbers.size() > 0) {
                 float sx = np.numbers.get(0);
-                float sy = 0;
+                float sy = sx;
                 if (np.numbers.size() > 1) {
                     sy = np.numbers.get(1);
                 }
@@ -351,9 +412,9 @@ public class SVGParser {
                     cy = np.numbers.get(2);
                 }
                 Matrix matrix = new Matrix();
-                matrix.postTranslate(cx, cy);
-                matrix.postRotate(angle);
                 matrix.postTranslate(-cx, -cy);
+                matrix.postRotate(angle);
+                matrix.postTranslate(cx, cy);
                 return matrix;
             }
         }
@@ -411,10 +472,7 @@ public class SVGParser {
                     if (prevCmd == 'm' || prevCmd == 'M') {
                         cmd = (char) (((int) prevCmd) - 1);
                         break;
-                    } else if (prevCmd == 'c' || prevCmd == 'C') {
-                        cmd = prevCmd;
-                        break;
-                    } else if (prevCmd == 'l' || prevCmd == 'L') {
+                    } else if ( ("lhvcsqta").indexOf( Character.toLowerCase(prevCmd)) >= 0 ) {
                         cmd = prevCmd;
                         break;
                     }
@@ -456,6 +514,9 @@ public class SVGParser {
                     wasCurve = true;
                     break;
                 }
+                case 'T':
+                case 't':
+                	// todo - smooth quadratic Bezier (two parameters)
                 case 'L':
                 case 'l': {
                     float x = ph.nextFloat();
@@ -519,6 +580,9 @@ public class SVGParser {
                     lastY = y;
                     break;
                 }
+                case 'Q':
+                case 'q':
+                	// todo - quadratic Bezier (four parameters)
                 case 'S':
                 case 's': {
                     wasCurve = true;
@@ -526,7 +590,7 @@ public class SVGParser {
                     float y2 = ph.nextFloat();
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 's') {
+                    if ( Character.isLowerCase(cmd) ) {
                         x2 += lastX;
                         x += lastX;
                         y2 += lastY;
@@ -772,10 +836,11 @@ public class SVGParser {
 
         Integer searchColor = null;
         Integer replaceColor = null;
+		private HashMap<String, Integer> idToColor=null;
 
         boolean whiteMode = false;
 
-        boolean pushed = false;
+        Stack<Boolean> transformStack = new Stack<Boolean>();
 
         HashMap<String, Shader> gradientMap = new HashMap<String, Shader>();
         HashMap<String, Gradient> gradientRefMap = new HashMap<String, Gradient>();
@@ -787,7 +852,11 @@ public class SVGParser {
             paint.setAntiAlias(true);
         }
 
-        public void setColorSwap(Integer searchColor, Integer replaceColor) {
+        public void setIdToColor(HashMap<String, Integer> idToColor) {
+			this.idToColor=idToColor;
+		}
+
+		public void setColorSwap(Integer searchColor, Integer replaceColor) {
             this.searchColor = searchColor;
             this.replaceColor = replaceColor;
         }
@@ -919,6 +988,12 @@ public class SVGParser {
             if (searchColor != null && searchColor.intValue() == c) {
                 c = replaceColor;
             }
+            if (idToColor != null) {
+            	String id=atts.getString("id");
+            	if (id.length()!=0 && idToColor.containsKey(id)) {
+                	c = idToColor.get(id);
+            	}
+            }
             paint.setColor(c);
             Float opacity = atts.getFloat("opacity");
             if (opacity == null) {
@@ -931,7 +1006,7 @@ public class SVGParser {
             }
         }
 
-        private boolean hidden = false;
+		private boolean hidden = false;
         private int hiddenLevel = 0;
         private boolean boundsMode = false;
 
@@ -963,16 +1038,18 @@ public class SVGParser {
 
         private void pushTransform(Attributes atts) {
             final String transform = getStringAttr("transform", atts);
-            pushed = transform != null;
+            boolean pushed = transform != null;
+            transformStack.push(pushed);
             if (pushed) {
                 final Matrix matrix = parseTransform(transform);
                 canvas.save();
                 canvas.concat(matrix);
             }
+            	
         }
 
         private void popTransform() {
-            if (pushed) {
+            if (transformStack.pop()) {
                 canvas.restore();
             }
         }
@@ -998,6 +1075,12 @@ public class SVGParser {
                 }
                 return;
             }
+            boolean forcedToHide=false;
+            String id=getStringAttr("id", atts);
+            if ( id != null && idToColor != null ) {
+            	forcedToHide= idToColor.containsKey(id) && idToColor.get(id)==Color.TRANSPARENT;
+            }
+            boolean hidden2=hidden || forcedToHide;
             if (localName.equals("svg")) {
                 int width = (int) Math.ceil(getFloatAttr("width", atts));
                 int height = (int) Math.ceil(getFloatAttr("height", atts));
@@ -1043,14 +1126,15 @@ public class SVGParser {
                     //Util.debug("Hidden up: " + hiddenLevel);
                 }
                 // Go in to hidden mode if display is "none"
-                if ("none".equals(getStringAttr("display", atts))) {
+                if (  "none".equals(getStringAttr("display", atts)) || forcedToHide ) {
                     if (!hidden) {
                         hidden = true;
                         hiddenLevel = 1;
                         //Util.debug("Hidden up: " + hiddenLevel);
                     }
                 }
-            } else if (!hidden && localName.equals("rect")) {
+                pushTransform(atts);
+            } else if (!hidden2 && localName.equals("rect")) {
                 Float x = getFloatAttr("x", atts);
                 if (x == null) {
                     x = 0f;
@@ -1071,7 +1155,7 @@ public class SVGParser {
                     canvas.drawRect(x, y, x + width, y + height, paint);
                 }
                 popTransform();
-            } else if (!hidden && localName.equals("line")) {
+            } else if (!hidden2 && localName.equals("line")) {
                 Float x1 = getFloatAttr("x1", atts);
                 Float x2 = getFloatAttr("x2", atts);
                 Float y1 = getFloatAttr("y1", atts);
@@ -1084,7 +1168,7 @@ public class SVGParser {
                     canvas.drawLine(x1, y1, x2, y2, paint);
                     popTransform();
                 }
-            } else if (!hidden && localName.equals("circle")) {
+            } else if (!hidden2 && localName.equals("circle")) {
                 Float centerX = getFloatAttr("cx", atts);
                 Float centerY = getFloatAttr("cy", atts);
                 Float radius = getFloatAttr("r", atts);
@@ -1101,7 +1185,7 @@ public class SVGParser {
                     }
                     popTransform();
                 }
-            } else if (!hidden && localName.equals("ellipse")) {
+            } else if (!hidden2 && localName.equals("ellipse")) {
                 Float centerX = getFloatAttr("cx", atts);
                 Float centerY = getFloatAttr("cy", atts);
                 Float radiusX = getFloatAttr("rx", atts);
@@ -1120,7 +1204,7 @@ public class SVGParser {
                     }
                     popTransform();
                 }
-            } else if (!hidden && (localName.equals("polygon") || localName.equals("polyline"))) {
+            } else if (!hidden2 && (localName.equals("polygon") || localName.equals("polyline"))) {
                 NumberParse numbers = getNumberParseAttr("points", atts);
                 if (numbers != null) {
                     Path p = new Path();
@@ -1148,7 +1232,7 @@ public class SVGParser {
                         popTransform();
                     }
                 }
-            } else if (!hidden && localName.equals("path")) {
+            } else if (!hidden2 && localName.equals("path")) {
                 Path p = doPath(getStringAttr("d", atts));
                 pushTransform(atts);
                 Properties props = new Properties(atts);
@@ -1160,7 +1244,7 @@ public class SVGParser {
                     canvas.drawPath(p, paint);
                 }
                 popTransform();
-            } else if (!hidden) {
+            } else if (!hidden2) {
                 Log.d(TAG, "UNRECOGNIZED SVG COMMAND: " + localName);
             }
         }
@@ -1244,6 +1328,7 @@ public class SVGParser {
                 }
                 // Clear gradient map
                 gradientMap.clear();
+                popTransform();
             }
         }
     }
