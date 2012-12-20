@@ -919,6 +919,7 @@ public class SVGParser {
         boolean whiteMode = false;
 
         Stack<Boolean> transformStack = new Stack<Boolean>();
+        Stack<Matrix> matrixStack = new Stack<Matrix>();
 
         HashMap<String, Gradient> gradientMap = new HashMap<String, Gradient>();
         Gradient gradient = null;
@@ -927,6 +928,7 @@ public class SVGParser {
             this.picture = picture;
             paint = new Paint();
             paint.setAntiAlias(true);
+        	matrixStack.push(new Matrix());
         }
 
         public void setIdToColor(HashMap<String, Integer> idToColor) {
@@ -1107,7 +1109,7 @@ public class SVGParser {
         private int hiddenLevel = 0;
         private boolean boundsMode = false;
 
-        private void doLimits(float x, float y) {
+        private void doLimits2(float x, float y) {
             if (x < limits.left) {
                 limits.left = x;
             }
@@ -1122,23 +1124,15 @@ public class SVGParser {
             }
         }
 
+        final private RectF limitRect=new RectF();
         private void doLimits(RectF box)
         {
-        	doLimits(box.left, box.top);
-        	doLimits(box.right, box.bottom);
-        }
-/*        
-        private void doLimits(float x, float y, float width, float height) {
-            doLimits(x, y);
-            doLimits(x + width, y + height);
+        	Matrix m=matrixStack.peek();
+        	m.mapRect(limitRect, box);
+        	doLimits2(limitRect.left, limitRect.top);
+        	doLimits2(limitRect.right, limitRect.bottom);
         }
 
-        private void doLimits(Path path) {
-            path.computeBounds(rect, false);
-            doLimits(rect.left, rect.top);
-            doLimits(rect.right, rect.bottom);
-        }
-*/
         private void pushTransform(Attributes atts) {
             final String transform = getStringAttr("transform", atts);
             boolean pushed = transform != null;
@@ -1147,6 +1141,8 @@ public class SVGParser {
                 final Matrix matrix = parseTransform(transform);
                 canvas.save();
                 canvas.concat(matrix);
+                matrix.postConcat(matrixStack.peek());
+                matrixStack.push(matrix);
             }
             	
         }
@@ -1154,6 +1150,7 @@ public class SVGParser {
         private void popTransform() {
             if (transformStack.pop()) {
                 canvas.restore();
+                matrixStack.pop();
             }
         }
 
