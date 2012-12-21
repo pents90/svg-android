@@ -3,6 +3,7 @@ package com.larvalabs.svgandroid;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.*;
+import android.graphics.Shader.TileMode;
 import android.graphics.drawable.PictureDrawable;
 import android.util.Log;
 import org.xml.sax.Attributes;
@@ -635,76 +636,89 @@ public class SVGParser {
 
     private static float angle(float x1, float y1, float x2, float y2) {
     	
-    	return (float) Math.toDegrees(Math.atan2(x1,y1)-Math.atan2(x2, y2))%360;
+		return (float) Math.toDegrees(Math.atan2(x1, y1) - Math.atan2(x2, y2)) % 360;
     }
-    private static final RectF arcRectf= new RectF();
-    private static final Matrix arcMatrix=new Matrix();
-    private static final Path arcPath=new Path();
     
+    private static final RectF arcRectf = new RectF();
+    private static final Matrix arcMatrix = new Matrix();
+    private static final Matrix arcMatrix2 = new Matrix();
+
     private static void drawArc(Path p, float lastX, float lastY, float x, float y, float rx, float ry, float theta, int largeArc, int sweepArc) {
-//    	Log.d("drawArc","from ("+lastX+","+lastY+") to ("+x+","+y+") r=("+rx+","+ry+") theta="+theta+" flags="+largeArc+","+sweepArc);
+//		Log.d("drawArc", "from (" + lastX + "," + lastY + ") to (" + x + ","+ y + ") r=(" + rx + "," + ry + ") theta=" + theta + " flags="+ largeArc + "," + sweepArc);
  
 // http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+		
+    	if (rx == 0 || ry == 0) {
+    		p.lineTo(x, y);
+    		return;
+		}
+		
+    	if (x == lastX && y == lastY)
+    		return; // nothing to draw
+		
+    	rx = Math.abs(rx);
+    	ry = Math.abs(ry);
+		
+    	final float thrad = theta * (float) Math.PI / 180;
+    	final float st = (float) Math.sin(thrad);
+    	final float ct = (float) Math.cos(thrad);
     	
-    	if (rx==0 || ry==0) {
-   		   p.lineTo(x, y);
-   		   return;
+    	final float xc = (lastX - x) / 2;
+    	final float yc = (lastY - y) / 2;
+    	final float x1t = ct * xc + st * yc;
+    	final float y1t = -st * xc + ct * yc;
+    	
+    	final float x1ts = x1t * x1t;
+    	final float y1ts = y1t * y1t;
+    	float rxs = rx * rx;
+    	float rys = ry * ry;
+		
+    	float lambda = (x1ts / rxs + y1ts / rys) * 1.001f; // add 0.1% to be sure that no out of range occurs due to limited precision
+    	if (lambda > 1) {
+    		float lambdasr = (float) Math.sqrt(lambda);
+    		rx *= lambdasr;
+    		ry *= lambdasr;
+    		rxs = rx * rx;
+    		rys = ry * ry;
     	}
-    	
-    	if (x==lastX && y==lastY) return; // nothing to draw
-
-    	rx=Math.abs(rx);
-    	ry=Math.abs(ry);
-    		
-    		
-    	final float thrad=theta*(float)Math.PI/180;
-    	final float st=(float) Math.sin(thrad);
-    	final float ct=(float) Math.cos(thrad);
-    	
-    	final float xc=(lastX-x)/2;
-    	final float yc=(lastY-y)/2;
-    	final float x1t=ct*xc+st*yc;
-    	final float y1t=-st*xc+ct*yc;
-    	
-    	final float x1ts=x1t*x1t;
-    	final float y1ts=y1t*y1t;
-        float rxs=rx*rx;
-    	float rys=ry*ry;
-
-    	float lambda=(x1ts/rxs+y1ts/rys)*1.001f; // add 0.1% to be sure that no out of range occurs due to limited precision
-    	if (lambda>1) {
-    		float lambdasr=(float)Math.sqrt(lambda);
-    		rx*=lambdasr;
-    		ry*=lambdasr;
-    		rxs=rx*rx;
-    		rys=ry*ry;
+		
+    	final float R = (float) Math.sqrt((rxs * rys - rxs * y1ts - rys * x1ts) / (rxs * y1ts + rys * x1ts))
+						* ((largeArc == sweepArc) ? -1 : 1);
+    	final float cxt = R * rx * y1t / ry;
+    	final float cyt = -R * ry * x1t / rx;
+    	final float cx = ct * cxt - st * cyt + (lastX + x) / 2;
+    	final float cy = st * cxt + ct * cyt + (lastY + y) / 2;
+		
+    	final float th1 = angle(1, 0, (x1t - cxt) / rx, (y1t - cyt) / ry);
+    	float dth = angle((x1t - cxt) / rx, (y1t - cyt) / ry,	(-x1t - cxt) / rx, (-y1t - cyt) / ry);
+		
+    	if (sweepArc == 0 && dth > 0)
+    		dth -= 360;
+    	else if (sweepArc != 0 && dth < 0)
+    		dth += 360;
+		
+		// draw
+    	if ((theta % 360) == 0) {
+    		// no rotate and translate need
+    		arcRectf.set(cx - rx, cy - ry, cx + rx, cy + ry);
+    		p.arcTo(arcRectf, th1, dth);
+    	} else {
+    		// this is the hard and slow part :-)
+    		arcRectf.set(-rx, -ry, rx, ry);
+		
+    		arcMatrix.reset();
+    		arcMatrix.postRotate(theta);
+    		arcMatrix.postTranslate(cx, cy);
+    		arcMatrix.invert(arcMatrix2);
+		
+    		p.transform(arcMatrix2);
+    		p.arcTo(arcRectf, th1, dth);
+    		p.transform(arcMatrix);
     	}
-    		   	
-    	final float R=(float)Math.sqrt((rxs*rys-rxs*y1ts-rys*x1ts)/(rxs*y1ts+rys*x1ts)) * ((largeArc==sweepArc)?-1:1);
-    	final float cxt=R*rx*y1t/ry;
-    	final float cyt=-R*ry*x1t/rx;
-    	final float cx=ct*cxt-st*cyt+(lastX+x)/2;
-    	final float cy=st*cxt+ct*cyt+(lastY+y)/2;
-    	
-    	final float th1=angle(1, 0, (x1t-cxt)/rx, (y1t-cyt)/ry);
-    	float dth=angle((x1t-cxt)/rx, (y1t-cyt)/ry, (-x1t-cxt)/rx, (-y1t-cyt)/ry);
-    	
-    	if       (sweepArc==0 && dth>0) dth-=360;
-    	else if (sweepArc!=0 && dth<0) dth+=360;
-    	
-// draw
-        arcMatrix.reset();
-        arcMatrix.postRotate(theta);
-        arcMatrix.postTranslate(cx, cy);
-
-    	arcRectf.set(-rx,-ry,rx,ry);
-        arcPath.rewind();
-    	arcPath.addArc(arcRectf, th1, dth);
-    	arcPath.transform(arcMatrix);
-    	p.addPath(arcPath);
     }
 
-    private static NumberParse getNumberParseAttr(String name, Attributes attributes) {
+	private static NumberParse getNumberParseAttr(String name,
+			Attributes attributes) {
         int n = attributes.getLength();
         for (int i = 0; i < n; i++) {
             if (attributes.getLocalName(i).equals(name)) {
@@ -731,30 +745,15 @@ public class SVGParser {
     private static Float getFloatAttr(String name, Attributes attributes, Float defaultValue) {
         String v = getStringAttr(name, attributes);
         if (v == null) {
-            return defaultValue;
+        	return defaultValue;
         } else if (v.endsWith("px")) {
-                v = v.substring(0, v.length() - 2);
+        	v = v.substring(0, v.length() - 2);
         } else if (v.endsWith("%")) {
         	v = v.substring(0, v.length() - 1);
         	return Float.parseFloat(v)/100;
         }
 //            Log.d(TAG, "Float parsing '" + name + "=" + v + "'");
         return Float.parseFloat(v);
-    }
-
-    private static Integer getHexAttr(String name, Attributes attributes) {
-        String v = getStringAttr(name, attributes);
-        //Util.debug("Hex parsing '" + name + "=" + v + "'");
-        if (v == null) {
-            return null;
-        } else {
-            try {
-                return Integer.parseInt(v.substring(1), 16);
-            } catch (NumberFormatException nfe) {
-                // todo - parse word-based color here
-                return null;
-            }
-        }
     }
 
     private static class NumberParse {
@@ -787,7 +786,7 @@ public class SVGParser {
         Matrix matrix = null;
         public Shader shader = null;
 		public boolean boundingBox = false;
-		public String spreadMethod = "";
+		public TileMode tilemode;
 
         public Gradient createChild(Gradient g) {
             Gradient child = new Gradient();
@@ -815,7 +814,7 @@ public class SVGParser {
             }
             child.boundingBox = g.boundingBox;
             child.shader = g.shader;
-            child.spreadMethod = g.spreadMethod;
+            child.tilemode = g.tilemode;
             return child;
         }
     }
@@ -865,17 +864,62 @@ public class SVGParser {
             return getAttr(name);
         }
 
-        public Integer getHex(String name) {
-            String v = getAttr(name);
-            if (v == null || !v.startsWith("#")) {
+        private Integer rgb(int r, int g, int b) {
+        	return ((r&0xff)<<16) | ((g&0xff)<<8) | ((b&0xff)<<0); 
+        }
+
+        private int parseNum(String v) throws NumberFormatException {
+        	if (v.endsWith("%")) {
+            	v = v.substring(0, v.length() - 1);
+            	return Math.round(Float.parseFloat(v)/100*255);
+            }
+            return Integer.parseInt(v);
+        }
+
+        
+        public Integer getColor(String name) {
+			String v= getAttr(name);
+			if (v == null) {
                 return null;
-            } else {
+			} else if (v.startsWith("#")) {
                 try {
-                    return Integer.parseInt(v.substring(1), 16);
+					int c = Integer.parseInt(v.substring(1), 16);
+					if (v.length() == 4) {
+						// short form color, i.e. #FFF
+						c = (c & 0x0f) * 0x11 + (c & 0xf0) * 0x110 + (c & 0xf00) * 0x1100;
+					}
+					return c;
                 } catch (NumberFormatException nfe) {
-                    // todo - parse word-based color here
-                    return null;
+                	return null;
                 }
+			} else if (v.startsWith("rgb(") && v.endsWith(")")) {
+				String values[]=v.substring(4,v.length()-1).split(",");
+				try {
+					return rgb(parseNum(values[0]),parseNum(values[1]),parseNum(values[2]));
+				} catch (NumberFormatException nfe) {
+					return null;
+				} catch ( ArrayIndexOutOfBoundsException e) {
+					return null;
+				}
+			} else {
+            	return 
+            			v.equalsIgnoreCase("black")?		rgb(0, 0, 0):		
+            			v.equalsIgnoreCase("green")?		rgb(0, 128, 0):
+            			v.equalsIgnoreCase("silver")?	rgb(192, 192, 192):		
+            			v.equalsIgnoreCase("lime")?		rgb(0, 255, 0):
+            			v.equalsIgnoreCase("gray")?		rgb(128, 128, 128):		
+            			v.equalsIgnoreCase("olive")?		rgb(128, 128, 0):
+            			v.equalsIgnoreCase("white")?		rgb(255, 255, 255):		
+            			v.equalsIgnoreCase("yellow")?	rgb(255, 255, 0):
+            			v.equalsIgnoreCase("maroon")?	rgb(128, 0, 0):		
+            			v.equalsIgnoreCase("navy")?		rgb(0, 0, 128):
+            			v.equalsIgnoreCase("red")?		rgb(255, 0, 0):
+            			v.equalsIgnoreCase("blue")?		rgb(0, 0, 255):
+            			v.equalsIgnoreCase("purple")?	rgb(128, 0, 128):
+            			v.equalsIgnoreCase("teal")?		rgb(0, 128, 128):
+            			v.equalsIgnoreCase("fuchsia")?	rgb(255, 0, 255):
+            			v.equalsIgnoreCase("aqua")?		rgb(0, 255, 255):
+            				null;	
             }
         }
 
@@ -990,7 +1034,7 @@ public class SVGParser {
                 }
             } else {
                 paint.setShader(null);
-                Integer color = atts.getHex("fill");
+                Integer color = atts.getColor("fill");
                 if (color != null) {
                     doColor(atts, color, true);
                     paint.setStyle(Paint.Style.FILL);
@@ -1013,7 +1057,7 @@ public class SVGParser {
             if ("none".equals(atts.getString("display"))) {
                 return false;
             }
-            Integer color = atts.getHex("stroke");
+            Integer color = atts.getColor("stroke");
             if (color != null) {
                 doColor(atts, color, false);
                 // Check for other stroke attributes
@@ -1065,8 +1109,11 @@ public class SVGParser {
             }
             String spreadMethod = getStringAttr("spreadMethod", atts);
             if (spreadMethod==null) spreadMethod="pad";
-            gradient.spreadMethod=spreadMethod;
             
+            gradient.tilemode=	(spreadMethod.equals("reflect"))?Shader.TileMode.MIRROR:
+            					(spreadMethod.equals("repeat"))?Shader.TileMode.REPEAT:
+            												    Shader.TileMode.CLAMP;
+
             String unit = getStringAttr("gradientUnits", atts);
             if (unit==null) unit="objectBoundingBox";
             gradient.boundingBox = !unit.equals("userSpaceOnUse");
@@ -1124,13 +1171,18 @@ public class SVGParser {
             }
         }
 
-        final private RectF limitRect=new RectF();
-        private void doLimits(RectF box)
-        {
-        	Matrix m=matrixStack.peek();
+        final private RectF limitRect = new RectF();
+
+        private void doLimits(RectF box, Paint paint) {
+        	Matrix m = matrixStack.peek();
         	m.mapRect(limitRect, box);
-        	doLimits2(limitRect.left, limitRect.top);
-        	doLimits2(limitRect.right, limitRect.bottom);
+        	float width2 = (paint == null) ? 0 : paint.getStrokeWidth() / 2;
+        	doLimits2(limitRect.left - width2, limitRect.top - width2);
+        	doLimits2(limitRect.right + width2, limitRect.bottom + width2);
+		}
+
+        private void doLimits(RectF box) {
+        	doLimits(box, null);
         }
 
         private void pushTransform(Attributes atts) {
@@ -1192,32 +1244,15 @@ public class SVGParser {
             } else if (localName.equals("radialGradient")) {
                 gradient = doGradient(false, atts);
             } else if (localName.equals("stop")) {
-                if (gradient != null) {
-                    float offset = getFloatAttr("offset", atts);
-                    String styles = getStringAttr("style", atts);
-                    StyleSet styleSet=null;
-                    if (styles!=null) styleSet = new StyleSet(styles);
-                    String colorStyle = getStringAttr("stop-color", atts);
-                    if (colorStyle==null && styleSet!=null) colorStyle=styleSet.getStyle("stop-color");
-                    int color = Color.BLACK;
-                    if (colorStyle != null) {
-                        if (colorStyle.startsWith("#")) {
-                            color = Integer.parseInt(colorStyle.substring(1), 16);
-                        } else {
-                            color = Integer.parseInt(colorStyle, 16);
-                        }
-                    }
-                    String opacityStyle = getStringAttr("stop-opacity", atts);
-                    if (opacityStyle==null && styleSet!=null) colorStyle=styleSet.getStyle("stop-opacity");
-                    if (opacityStyle != null) {
-                        float alpha = Float.parseFloat(opacityStyle);
-                        int alphaInt = Math.round(255 * alpha);
-                        color |= (alphaInt << 24);
-                    } else {
-                        color |= 0xFF000000;
-                    }
-                    gradient.positions.add(offset);
-                    gradient.colors.add(color);
+            	if (gradient != null) {
+            		Properties props = new Properties(atts);
+            		float offset = props.getFloat("offset", 0); 
+            		int color = props.getColor("stop-color");
+            		float alpha = props.getFloat("stop-opacity", 1);
+            		int alphaInt = Math.round(255 * alpha);
+            		color |= (alphaInt << 24);
+            		gradient.positions.add(offset);
+            		gradient.colors.add(color);
                 }
             } else if (localName.equals("g")) {
                 // Check to see if this is the "bounds" layer
@@ -1250,13 +1285,14 @@ public class SVGParser {
                 Float height = getFloatAttr("height", atts);
                 pushTransform(atts);
                 Properties props = new Properties(atts);
-                rect.set(x, y, x+width, y+height);
-                doLimits(rect);
+ 				rect.set(x, y, x + width, y + height);
                 if (doFill(props, rect)) {
                     canvas.drawRect(rect, paint);
+                    doLimits(rect);
                 }
                 if (doStroke(props)) {
                     canvas.drawRect(rect, paint);
+                    doLimits(rect, paint);
                 }
                 popTransform();
             } else if (!hidden2 && localName.equals("line")) {
@@ -1267,43 +1303,34 @@ public class SVGParser {
                 Properties props = new Properties(atts);
                 if (doStroke(props)) {
                     pushTransform(atts);
-                    rect.set(x1,y1,x2,y2);
-                    doLimits(rect);
+					rect.set(x1, y1, x2, y2);
                     canvas.drawLine(x1, y1, x2, y2, paint);
+                    doLimits(rect, paint);
                     popTransform();
                 }
-            } else if (!hidden2 && localName.equals("circle")) {
-                Float centerX = getFloatAttr("cx", atts);
-                Float centerY = getFloatAttr("cy", atts);
-                Float radius = getFloatAttr("r", atts);
-                if (centerX != null && centerY != null && radius != null) {
-                    pushTransform(atts);
-                    Properties props = new Properties(atts);
-                    rect.set(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-                    doLimits(rect);
-                    if (doFill(props, rect)) {
-                        canvas.drawCircle(centerX, centerY, radius, paint);
-                    }
-                    if (doStroke(props)) {
-                        canvas.drawCircle(centerX, centerY, radius, paint);
-                    }
-                    popTransform();
+			} else if (!hidden2 && (localName.equals("circle") || localName.equals("ellipse"))) {
+				Float centerX, centerY, radiusX, radiusY;
+
+				centerX = getFloatAttr("cx", atts);
+				centerY = getFloatAttr("cy", atts);
+				if (localName.equals("ellipse")) {
+					radiusX = getFloatAttr("rx", atts);
+					radiusY = getFloatAttr("ry", atts);
+
+				} else {
+					radiusX = radiusY = getFloatAttr("r", atts);
                 }
-            } else if (!hidden2 && localName.equals("ellipse")) {
-                Float centerX = getFloatAttr("cx", atts);
-                Float centerY = getFloatAttr("cy", atts);
-                Float radiusX = getFloatAttr("rx", atts);
-                Float radiusY = getFloatAttr("ry", atts);
-                if (centerX != null && centerY != null && radiusX != null && radiusY != null) {
+				if (centerX != null && centerY != null && radiusX != null && radiusY != null) {
                     pushTransform(atts);
                     Properties props = new Properties(atts);
-                    rect.set(centerX - radiusX, centerY - radiusY, centerX + radiusX, centerY + radiusY);
-                    doLimits(rect);
+					rect.set(centerX-radiusX, centerY-radiusY, centerX+radiusX, centerY+radiusY);
                     if (doFill(props, rect)) {
                         canvas.drawOval(rect, paint);
+                        doLimits(rect);
                     }
                     if (doStroke(props)) {
                         canvas.drawOval(rect, paint);
+                        doLimits(rect, paint);
                     }
                     popTransform();
                 }
@@ -1326,12 +1353,13 @@ public class SVGParser {
                             p.close();
                         }
                         p.computeBounds(rect, false);
-                        doLimits(rect);
                         if (doFill(props, rect)) {
                             canvas.drawPath(p, paint);
+                            doLimits(rect);
                         }
                         if (doStroke(props)) {
                             canvas.drawPath(p, paint);
+                            doLimits(rect, paint);
                         }
                         popTransform();
                     }
@@ -1341,12 +1369,13 @@ public class SVGParser {
                 pushTransform(atts);
                 Properties props = new Properties(atts);
                 p.computeBounds(rect, false);
-                doLimits(rect);
                 if (doFill(props, rect)) {
                     canvas.drawPath(p, paint);
+                    doLimits(rect);
                 }
                 if (doStroke(props)) {
                     canvas.drawPath(p, paint);
+                    doLimits(rect, paint);
                 }
                 popTransform();
             } else if (!hidden2) {
@@ -1364,7 +1393,7 @@ public class SVGParser {
                 throws SAXException {
             if (localName.equals("svg")) {
                 picture.endRecording();
-            } else if (localName.equals("linearGradient")) {
+            } else if (localName.equals("linearGradient") || localName.equals("radialGradient")) {
                 if (gradient.id != null) {
                     if (gradient.xlink != null) {
                         Gradient parent = gradientMap.get(gradient.xlink);
@@ -1383,43 +1412,11 @@ public class SVGParser {
                     if (colors.length == 0) {
                         Log.d("BAD", "BAD");
                     }
-                    //Log.d("gradient","creating linear gradient "+gradient.x1+" "+gradient.y1+" "+ gradient.x2+" "+gradient.y2)
-                    Shader.TileMode  tilemode=
-                    		(gradient.spreadMethod.equals("reflect"))?Shader.TileMode.MIRROR:
-                    		(gradient.spreadMethod.equals("repeat"))?Shader.TileMode.REPEAT:
-                    												Shader.TileMode.CLAMP;
-//                    Log.d("gradient","spread="+gradient.spreadMethod);
-                    LinearGradient g = new LinearGradient(gradient.x1, gradient.y1, gradient.x2, gradient.y2, colors, positions, tilemode);
-                    gradient.shader=g;
-                    gradientMap.put(gradient.id, gradient);
-                }
-            } else if (localName.equals("radialGradient")) {
-                if (gradient.id != null) {
-                    if (gradient.xlink != null) {
-                        Gradient parent = gradientMap.get(gradient.xlink);
-                        if (parent != null) {
-                            gradient = parent.createChild(gradient);
-                        }
+                    if (localName.equals("linearGradient")) {
+                    	gradient.shader= new LinearGradient(gradient.x1, gradient.y1, gradient.x2, gradient.y2, colors, positions, gradient.tilemode);
+                    } else {
+                    	gradient.shader= new RadialGradient(gradient.x, gradient.y, gradient.radius, colors, positions, gradient.tilemode);
                     }
-                    int[] colors = new int[gradient.colors.size()];
-                    for (int i = 0; i < colors.length; i++) {
-                        colors[i] = gradient.colors.get(i);
-                    }
-                    float[] positions = new float[gradient.positions.size()];
-                    for (int i = 0; i < positions.length; i++) {
-                        positions[i] = gradient.positions.get(i);
-                    }
-                    if (gradient.xlink != null) {
-                        Gradient parent = gradientMap.get(gradient.xlink);
-                        if (parent != null) {
-                            gradient = parent.createChild(gradient);
-                        }
-                    }
-                    RadialGradient g = new RadialGradient(gradient.x, gradient.y, gradient.radius, colors, positions, Shader.TileMode.CLAMP);
-                    if (gradient.matrix != null) {
-                        g.setLocalMatrix(gradient.matrix);
-                    }
-                    gradient.shader=g;
                     gradientMap.put(gradient.id, gradient);
                 }
             } else if (localName.equals("g")) {
