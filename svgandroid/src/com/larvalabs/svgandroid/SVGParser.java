@@ -39,6 +39,25 @@ import java.util.Stack;
    See the License for the specific language governing permissions and
    limitations under the License.
 
+	History:
+		original version from https://github.com/pents90/svg-android.git
+		forked 2012-11-20 by Josef Pavlik josef@pavlik.it
+		current git:
+		git@github.com:josefpavlik/svg-android.git
+		
+	changelog:
+		2012-11-20 multiple color and visibility changing, bugfixes 
+		2012-12-17 path command ARCTO implemented (function drawarc)
+		2012-12-20 gradient support for attr 'gradientUnits' and 'spreadMethod' 
+		2012-12-20 content bounding-box check enhanced 
+		2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
+		2012-12-27 default color bug fixed, history added
+		
+	todo:
+		inherit colors and other attributes from parent group
+		handle zipped svg
+		split svg by layers to map<layerName. picture>
+		
  */
 
 /**
@@ -1039,7 +1058,7 @@ public class SVGParser {
                     doColor(atts, color, true);
                     paint.setStyle(Paint.Style.FILL);
                     return true;
-                } else if (atts.getString("fill") == null && atts.getString("stroke") == null) {
+                } else if (atts.getString("fill") == null) {
                     // Default is black fill
                     paint.setStyle(Paint.Style.FILL);
                     paint.setColor(0xFF000000);
