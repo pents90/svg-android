@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
+import java.util.zip.GZIPInputStream;
 
 
 /*
@@ -56,6 +57,7 @@ import java.util.Stack;
 		2013-01-03 float number parse bug fixed
 		2013-01-03 rounded rectangle supported
 		2013-01-03 named color handling enhanced, (thanks to Stephen Uhler, http://code.google.com/p/svg-android-2)
+		2013-01-03 zipped svg supported 
 		
 	todo:
 		inherit colors and other attributes from parent group
@@ -259,7 +261,20 @@ public class SVGParser {
     
     private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode, HashMap<String, Integer> idToColor) throws SVGParseException {
 //        Util.debug("Parsing SVG...");
+//    	Log.d("svgparser","stream is markable "+in.markSupported ());
         try {
+        	if (in.markSupported()) {
+        		in.mark(4);
+        		byte[] magic=new byte[2];
+        		int r=in.read(magic,0,2);
+        		int magicInt=(magic[0]+(((int)magic[1])<<8))&0xffff;
+        		in.reset();	
+        		if (r==2 && magicInt==GZIPInputStream.GZIP_MAGIC) {
+        			Log.d("svgparser","SVG is gzipped");
+        			GZIPInputStream gin=new GZIPInputStream(in);
+        			in=(InputStream)gin;
+        		}
+        	}
             long start = System.currentTimeMillis();
             SAXParserFactory spf = SAXParserFactory.newInstance();
             SAXParser sp = spf.newSAXParser();
@@ -271,7 +286,7 @@ public class SVGParser {
             handler.setWhiteMode(whiteMode);
             xr.setContentHandler(handler);
             xr.parse(new InputSource(in));
-//        Log.d("SVG PARSER","Parsing complete in " + (System.currentTimeMillis() - start) + " ms.");
+        Log.d("SVG PARSER","Parsing complete in " + (System.currentTimeMillis() - start) + " ms.");
             SVG result = new SVG(picture, handler.bounds);
             // Skip bounds if it was an empty pic
             if (!Float.isInfinite(handler.limits.top)) {
