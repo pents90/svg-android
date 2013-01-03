@@ -52,6 +52,7 @@ import java.util.Stack;
 		2012-12-20 content bounding-box check enhanced 
 		2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
 		2012-12-27 default color bug fixed, history added
+		2013-01-03 gradient forward reference allowed
 		
 	todo:
 		inherit colors and other attributes from parent group
@@ -806,7 +807,7 @@ public class SVGParser {
         public Shader shader = null;
 		public boolean boundingBox = false;
 		public TileMode tilemode;
-
+/*
         public Gradient createChild(Gradient g) {
             Gradient child = new Gradient();
             child.id = g.id;
@@ -835,6 +836,20 @@ public class SVGParser {
             child.shader = g.shader;
             child.tilemode = g.tilemode;
             return child;
+        }
+*/
+        public void inherit(Gradient parent) {
+            Gradient child = this;
+            child.xlink = parent.id;
+            child.positions = parent.positions;
+            child.colors = parent.colors;
+            if (child.matrix == null) {
+                child.matrix = parent.matrix;
+            } else if (parent.matrix != null) {
+            	Matrix m = new Matrix(parent.matrix);
+                m.preConcat(child.matrix);
+                child.matrix = m;
+            }
         }
     }
 
@@ -1146,6 +1161,34 @@ public class SVGParser {
             }
             return gradient;
         }
+        
+        private void finishGradients() {
+        	for(Gradient gradient : gradientMap.values()) {
+                if (gradient.xlink != null) {
+                    Gradient parent = gradientMap.get(gradient.xlink);
+                    if (parent != null) {
+                        gradient.inherit(parent);
+                    }
+                }
+                int[] colors = new int[gradient.colors.size()];
+                for (int i = 0; i < colors.length; i++) {
+                    colors[i] = gradient.colors.get(i);
+                }
+                float[] positions = new float[gradient.positions.size()];
+                for (int i = 0; i < positions.length; i++) {
+                    positions[i] = gradient.positions.get(i);
+                }
+                if (colors.length == 0) {
+               		Log.d("BAD", "BAD gradient, id="+gradient.id);
+                }
+                if (gradient.isLinear) {
+                	gradient.shader= new LinearGradient(gradient.x1, gradient.y1, gradient.x2, gradient.y2, colors, positions, gradient.tilemode);
+                } else {
+                	gradient.shader= new RadialGradient(gradient.x, gradient.y, gradient.radius, colors, positions, gradient.tilemode);
+                }
+
+        	}
+        }
 
         private void doColor(Properties atts, Integer color, boolean fillMode) {
             int c = (0xFFFFFF & color) | 0xFF000000;
@@ -1248,6 +1291,7 @@ public class SVGParser {
             }
             boolean forcedToHide=false;
             String id=getStringAttr("id", atts);
+//            Log.d("svgparser","id="+id);
             if ( id != null && idToColor != null ) {
             	forcedToHide= idToColor.containsKey(id) && idToColor.get(id)==Color.TRANSPARENT;
             }
@@ -1414,30 +1458,10 @@ public class SVGParser {
                 picture.endRecording();
             } else if (localName.equals("linearGradient") || localName.equals("radialGradient")) {
                 if (gradient.id != null) {
-                    if (gradient.xlink != null) {
-                        Gradient parent = gradientMap.get(gradient.xlink);
-                        if (parent != null) {
-                            gradient = parent.createChild(gradient);
-                        }
-                    }
-                    int[] colors = new int[gradient.colors.size()];
-                    for (int i = 0; i < colors.length; i++) {
-                        colors[i] = gradient.colors.get(i);
-                    }
-                    float[] positions = new float[gradient.positions.size()];
-                    for (int i = 0; i < positions.length; i++) {
-                        positions[i] = gradient.positions.get(i);
-                    }
-                    if (colors.length == 0) {
-                        Log.d("BAD", "BAD");
-                    }
-                    if (localName.equals("linearGradient")) {
-                    	gradient.shader= new LinearGradient(gradient.x1, gradient.y1, gradient.x2, gradient.y2, colors, positions, gradient.tilemode);
-                    } else {
-                    	gradient.shader= new RadialGradient(gradient.x, gradient.y, gradient.radius, colors, positions, gradient.tilemode);
-                    }
                     gradientMap.put(gradient.id, gradient);
                 }
+            } else if (localName.equals("defs")) {
+            	finishGradients();
             } else if (localName.equals("g")) {
                 if (boundsMode) {
                     boundsMode = false;
