@@ -57,11 +57,10 @@ import java.util.zip.GZIPInputStream;
 		2013-01-03 float number parse bug fixed
 		2013-01-03 rounded rectangle supported
 		2013-01-03 named color handling enhanced, (thanks to Stephen Uhler, http://code.google.com/p/svg-android-2)
-		2013-01-03 zipped svg supported 
+		2013-01-03 zipped svg supported - autodetect, only if stream is seekable, works with svg in resources
 		
 	todo:
 		inherit colors and other attributes from parent group
-		handle zipped svg
 		split svg by layers to map<layerName. picture>
 		
  */
