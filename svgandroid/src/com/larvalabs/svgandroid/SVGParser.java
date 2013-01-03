@@ -1343,25 +1343,28 @@ public class SVGParser {
                 }
                 pushTransform(atts);
             } else if (!hidden2 && localName.equals("rect")) {
-                Float x = getFloatAttr("x", atts);
-                if (x == null) {
-                    x = 0f;
-                }
-                Float y = getFloatAttr("y", atts);
-                if (y == null) {
-                    y = 0f;
-                }
+                Float x = getFloatAttr("x", atts, 0f);
+                Float y = getFloatAttr("y", atts, 0f);
+                
                 Float width = getFloatAttr("width", atts);
                 Float height = getFloatAttr("height", atts);
+                Float rx = getFloatAttr("rx", atts);
+                Float ry = getFloatAttr("ry", atts);
+                if (ry==null) ry=rx;
+                if (rx==null) rx=ry;
+                if (rx==null || rx<0) rx=0f;
+                if (ry==null || ry<0) ry=0f;
+                if (rx>width/2) rx=width/2;
+                if (ry>height/2) ry=height/2;
                 pushTransform(atts);
                 Properties props = new Properties(atts);
  				rect.set(x, y, x + width, y + height);
                 if (doFill(props, rect)) {
-                    canvas.drawRect(rect, paint);
+                    canvas.drawRoundRect(rect, rx, ry, paint);
                     doLimits(rect);
                 }
                 if (doStroke(props)) {
-                    canvas.drawRect(rect, paint);
+                    canvas.drawRoundRect(rect, rx, ry, paint);
                     doLimits(rect, paint);
                 }
                 popTransform();
