@@ -53,6 +53,7 @@ import java.util.Stack;
 		2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
 		2012-12-27 default color bug fixed, history added
 		2013-01-03 gradient forward reference allowed
+		2013-01-03 float number parse bug fixed
 		
 	todo:
 		inherit colors and other attributes from parent group
@@ -281,7 +282,7 @@ public class SVGParser {
     }
 
     private static NumberParse parseNumbers(String s) {
-        //Util.debug("Parsing numbers from: '" + s + "'");
+//        Log.d("svgparser","Parsing numbers from: '" + s + "'");
         int n = s.length();
         int p = 0;
         ArrayList<Float> numbers = new ArrayList<Float>();
@@ -324,6 +325,12 @@ public class SVGParser {
                     p = i;
                     return new NumberParse(numbers, p);
                 }
+                case 'e':
+                case 'E': {
+                	// exponent in float number - skip eventual minus sign following the exponent
+                	skipChar=true; 
+                	break;
+                }
                 case '\n':
                 case '\t':
                 case ' ':
@@ -332,7 +339,7 @@ public class SVGParser {
                     String str = s.substring(p, i);
                     // Just keep moving if multiple whitespace
                     if (str.trim().length() > 0) {
-                        //Util.debug("  Next: " + str);
+//                        Log.d("svgparser","  Next: " + str);
                         Float f = Float.parseFloat(str);
                         numbers.add(f);
                         if (c == '-') {
