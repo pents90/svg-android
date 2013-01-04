@@ -1,5 +1,7 @@
 package com.larvalabs.svgandroid;
 
+import android.util.Log;
+
 /*
 
    Licensed to the Apache Software Foundation (ASF) under one or more
@@ -303,4 +305,13 @@ public class ParserHelper {
         skipNumberSeparator();
         return f;
     }
+    
+    public int nextFlag() {
+        skipWhitespace();
+        int flag=current-'0';
+        current = read();
+        skipNumberSeparator();
+        return flag;
+    }
+
 }
