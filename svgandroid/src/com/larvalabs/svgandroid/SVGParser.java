@@ -67,14 +67,16 @@ public class SVGParser {
     }
 
     /**
-     * Parse SVG data from a string.
-     *
-     * @param svgData the string containing SVG XML data.
-     * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * Parse SVG data from an input stream and scale to the specific size.
+     * @param svgData
+     * @param targetWidth
+     * @param targetHeight
+     * @return
+     * @throws SVGParseException
      */
-    public static SVG getSVGFromString(String svgData) throws SVGParseException {
-        return SVGParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false);
+    public static SVG getSVGFromInputStream(InputStream svgData, int targetWidth, int targetHeight)
+            throws SVGParseException {
+        return SVGParser.parse(svgData, 0, 0, false, targetWidth, targetHeight);
     }
 
     /**
@@ -114,8 +116,9 @@ public class SVGParser {
      * @return the parsed SVG.
      * @throws SVGParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromInputStream(InputStream svgData, int searchColor, int replaceColor) throws SVGParseException {
-        return SVGParser.parse(svgData, searchColor, replaceColor, false);
+    public static SVG getSVGFromInputStream(InputStream svgData, int searchColor, int replaceColor,
+                                            int targetWidth, int targetHeight) throws SVGParseException {
+        return SVGParser.parse(svgData, searchColor, replaceColor, false, targetWidth, targetHeight);
     }
 
     /**
@@ -173,7 +176,8 @@ public class SVGParser {
         return doPath(pathString);
     }
 
-    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SVGParseException {
+    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode,
+                             int targetWidth, int targetHeight) throws SVGParseException {
 //        Util.debug("Parsing SVG...");
         try {
             long start = System.currentTimeMillis();
@@ -181,7 +185,7 @@ public class SVGParser {
             SAXParser sp = spf.newSAXParser();
             XMLReader xr = sp.getXMLReader();
             final Picture picture = new Picture();
-            SVGHandler handler = new SVGHandler(picture);
+            SVGHandler handler = new SVGHandler(picture, targetWidth, targetHeight);
             handler.setColorSwap(searchColor, replaceColor);
             handler.setWhiteMode(whiteMode);
             xr.setContentHandler(handler);
@@ -196,6 +200,10 @@ public class SVGParser {
         } catch (Exception e) {
             throw new SVGParseException(e);
         }
+    }
+
+    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SVGParseException {
+        return parse(in, searchColor, replaceColor, whiteMode, 0, 0);
     }
 
     private static NumberParse parseNumbers(String s) {
@@ -772,6 +780,8 @@ public class SVGParser {
 
         Integer searchColor = null;
         Integer replaceColor = null;
+        int targetWidth;
+        int targetHeight;
 
         boolean whiteMode = false;
 
@@ -785,6 +795,12 @@ public class SVGParser {
             this.picture = picture;
             paint = new Paint();
             paint.setAntiAlias(true);
+        }
+
+        private SVGHandler(Picture picture, int targetWidth, int targetHeight) {
+            this(picture);
+            this.targetWidth = targetWidth;
+            this.targetHeight = targetHeight;
         }
 
         public void setColorSwap(Integer searchColor, Integer replaceColor) {
@@ -977,6 +993,41 @@ public class SVGParser {
             }
         }
 
+        /**
+         * Start recording picture on the canvas.
+         * If target width and height are set for the canvas
+         * scale output picture uniformally using by the smallest
+         * dimention.
+         * @param imageWidth Width of the SVG image.
+         * @param imageHeight Height of the SVG image.
+         * @return
+         */
+        private Canvas beginRecordingPicture(int imageWidth, int imageHeight) {
+            if(targetWidth == 0 || targetHeight == 0) {
+               return picture.beginRecording(imageWidth, imageHeight);
+            } else {
+               Canvas canvas = picture.beginRecording(targetWidth, targetHeight);
+               prepareScaledCanvas(canvas, imageWidth, imageHeight);
+               return canvas;
+            }
+        }
+
+        private static final void prepareScaledCanvas(Canvas canvas, float imageWidth, float imageHeight) {
+            final float scaleX = canvas.getWidth() / imageWidth;
+            final float scaleY = canvas.getHeight() / imageHeight;
+
+            if(scaleX > scaleY) {
+                final float dx = ((scaleX - scaleY) * imageWidth) / 2;
+                canvas.translate(dx, 0);
+                canvas.scale(scaleY, scaleY);
+            } else {
+                final float dy = ((scaleY - scaleX) * imageHeight) / 2;
+                canvas.translate(0, dy);
+                canvas.scale(scaleX, scaleX);
+            }
+        }
+
+
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
             // Reset paint opacity
@@ -999,9 +1050,9 @@ public class SVGParser {
                 return;
             }
             if (localName.equals("svg")) {
-                int width = (int) Math.ceil(getFloatAttr("width", atts));
-                int height = (int) Math.ceil(getFloatAttr("height", atts));
-                canvas = picture.beginRecording(width, height);
+                int imageWidth = (int) Math.ceil(getFloatAttr("width", atts));
+                int imageHeight = (int) Math.ceil(getFloatAttr("height", atts));
+                canvas = beginRecordingPicture(imageWidth, imageHeight);
             } else if (localName.equals("defs")) {
                 // Ignore
             } else if (localName.equals("linearGradient")) {
