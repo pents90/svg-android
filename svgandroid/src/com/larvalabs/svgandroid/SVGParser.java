@@ -384,11 +384,27 @@ public class SVGParser {
         return new NumberParse(numbers, p);
     }
 
+    private static NumberParse readTransform(String attr, String type) {
+      int i = attr.indexOf(type +"(");
+      if( i > -1 ) {
+        i += type.length() +1;
+        int j = attr.indexOf(")", i);
+        if( j > -1 ) {
+          NumberParse np = parseNumbers( attr.substring(i, j) );
+          if( np.numbers.size() > 0 )
+            return np;
+        }
+      }
+      return null;
+    }
+
     private static Matrix parseTransform(String s) {
+        Matrix matrix = new Matrix();
+        boolean transformed = false;
+
         if (s.startsWith("matrix(")) {
             NumberParse np = parseNumbers(s.substring("matrix(".length()));
             if (np.numbers.size() == 6) {
-                Matrix matrix = new Matrix();
                 matrix.setValues(new float[]{
                         // Row 1
                         np.numbers.get(0),
@@ -403,66 +419,66 @@ public class SVGParser {
                         0,
                         1,
                 });
-                return matrix;
-            }
-        } else if (s.startsWith("translate(")) {
-            NumberParse np = parseNumbers(s.substring("translate(".length()));
-            if (np.numbers.size() > 0) {
-                float tx = np.numbers.get(0);
-                float ty = 0;
-                if (np.numbers.size() > 1) {
-                    ty = np.numbers.get(1);
-                }
-                Matrix matrix = new Matrix();
-                matrix.postTranslate(tx, ty);
-                return matrix;
-            }
-        } else if (s.startsWith("scale(")) {
-            NumberParse np = parseNumbers(s.substring("scale(".length()));
-            if (np.numbers.size() > 0) {
-                float sx = np.numbers.get(0);
-                float sy = sx;
-                if (np.numbers.size() > 1) {
-                    sy = np.numbers.get(1);
-                }
-                Matrix matrix = new Matrix();
-                matrix.postScale(sx, sy);
-                return matrix;
-            }
-        } else if (s.startsWith("skewX(")) {
-            NumberParse np = parseNumbers(s.substring("skewX(".length()));
-            if (np.numbers.size() > 0) {
-                float angle = np.numbers.get(0);
-                Matrix matrix = new Matrix();
-                matrix.postSkew((float) Math.tan(angle), 0);
-                return matrix;
-            }
-        } else if (s.startsWith("skewY(")) {
-            NumberParse np = parseNumbers(s.substring("skewY(".length()));
-            if (np.numbers.size() > 0) {
-                float angle = np.numbers.get(0);
-                Matrix matrix = new Matrix();
-                matrix.postSkew(0, (float) Math.tan(angle));
-                return matrix;
-            }
-        } else if (s.startsWith("rotate(")) {
-            NumberParse np = parseNumbers(s.substring("rotate(".length()));
-            if (np.numbers.size() > 0) {
-                float angle = np.numbers.get(0);
-                float cx = 0;
-                float cy = 0;
-                if (np.numbers.size() > 2) {
-                    cx = np.numbers.get(1);
-                    cy = np.numbers.get(2);
-                }
-                Matrix matrix = new Matrix();
-                matrix.postTranslate(-cx, -cy);
-                matrix.postRotate(angle);
-                matrix.postTranslate(cx, cy);
-                return matrix;
+                transformed = true;
             }
         }
-        return null;
+
+        NumberParse np = readTransform(s, "scale");
+        if( null != np ) {
+            float sx = np.numbers.get(0);
+            float sy = sx;
+            if (np.numbers.size() > 1) {
+               sy = np.numbers.get(1);
+            }
+            matrix.postScale(sx, sy);
+  
+            transformed = true;
+        }
+
+        np = readTransform(s, "skewX");
+        if( null != np ) {
+            float angle = np.numbers.get(0);
+            matrix.preSkew((float) Math.tan(angle), 0);
+  
+            transformed = true;
+        }
+
+        np = readTransform(s, "skewY");
+        if( null != np ) {
+            float angle = np.numbers.get(0);
+            matrix.preSkew(0, (float) Math.tan(angle));
+  
+            transformed = true;
+        }
+
+        np = readTransform(s, "rotate");
+        if( null != np ) {
+            float angle = np.numbers.get(0);
+            float cx = 0;
+            float cy = 0;
+            if (np.numbers.size() > 2) {
+                cx = np.numbers.get(1);
+                cy = np.numbers.get(2);
+                matrix.preRotate(angle, cx, cy);
+            } else {
+                matrix.preRotate(angle);
+            }
+            transformed = true;
+        }
+
+        np = readTransform(s, "translate");
+        if( null != np ) {
+            float tx = np.numbers.get(0);
+            float ty = 0;
+            if (np.numbers.size() > 1) {
+                ty = np.numbers.get(1);
+            }
+            matrix.postTranslate(tx, ty);
+
+            transformed = true;
+        }
+        
+        return transformed ? matrix : null;
     }
 
     /**
