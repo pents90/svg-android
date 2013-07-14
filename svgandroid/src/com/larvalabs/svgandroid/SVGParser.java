@@ -1024,6 +1024,9 @@ public class SVGParser {
         HashMap<String, Gradient> gradientMap = new HashMap<String, Gradient>();
         Gradient gradient = null;
 
+        HashMap<String, String> defs = new HashMap<String, String>();
+        boolean defsReading = false;
+
         private SVGHandler(Picture picture) {
             this.picture = picture;
             paint = new Paint();
@@ -1318,12 +1321,18 @@ public class SVGParser {
             	forcedToHide= idToColor.containsKey(id) && idToColor.get(id)==Color.TRANSPARENT;
             }
             boolean hidden2=hidden || forcedToHide;
+
+            if(!hidden2 && localName.equals("use")) {
+                localName = "path";
+            }
+
             if (localName.equals("svg")) {
                 int width = (int) Math.ceil(getFloatAttr("width", atts));
                 int height = (int) Math.ceil(getFloatAttr("height", atts));
                 canvas = picture.beginRecording(width, height);
             } else if (localName.equals("defs")) {
                 // Ignore
+                defsReading = true;
             } else if (localName.equals("linearGradient")) {
                 gradient = doGradient(true, atts);
             } else if (localName.equals("radialGradient")) {
@@ -1453,7 +1462,23 @@ public class SVGParser {
                     }
                 }
             } else if (!hidden2 && localName.equals("path")) {
-                Path p = doPath(getStringAttr("d", atts));
+                String d = getStringAttr("d", atts);
+
+                if(defsReading) {
+                  defs.put(id, getStringAttr("d", atts));
+                  return;
+                } else if(null == d) {
+                  String href = getStringAttr("href", atts);
+                  if( null != href && href.startsWith("#") ) {
+                    href = href.substring(1);
+                  }
+                  if( null != href && defs.containsKey(href) ) {
+                    d = defs.get(href);
+                  }
+                  if(null == d)
+                    return;
+                }
+                Path p = doPath(d);
                 pushTransform(atts);
                 Properties props = new Properties(atts);
                 p.computeBounds(rect, false);
@@ -1481,12 +1506,16 @@ public class SVGParser {
                 throws SAXException {
             if (localName.equals("svg")) {
                 picture.endRecording();
+                // clear
+                defs.clear();
+                defs = null;
             } else if (localName.equals("linearGradient") || localName.equals("radialGradient")) {
                 if (gradient.id != null) {
                     gradientMap.put(gradient.id, gradient);
                 }
             } else if (localName.equals("defs")) {
             	finishGradients();
+              defsReading = false;
             } else if (localName.equals("g")) {
                 if (boundsMode) {
                     boundsMode = false;
