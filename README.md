@@ -16,3 +16,4 @@ new features:
 * and many other issues fixed
 
 * supports simple text / tspan from [svg-android](https://github.com/michaelnovakjr/svg-android), [svg-android-2 on google code](https://code.google.com/p/svg-android-2/)
+* fix pt crash bug

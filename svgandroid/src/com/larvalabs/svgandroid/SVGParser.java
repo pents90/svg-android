@@ -97,6 +97,8 @@ public class SVGParser {
 
     static final String TAG = "SVGAndroid";
 
+    public static float density = 1.0f;
+
     /**
      * Parse SVG data from an input stream.
      *
@@ -822,6 +824,9 @@ public class SVGParser {
         	return defaultValue;
         } else if (v.endsWith("px")) {
         	v = v.substring(0, v.length() - 2);
+        } else if (v.endsWith("pt")) {
+        	v = v.substring(0, v.length() - 2);
+          return Float.parseFloat(v) * density + 0.5f;
         } else if (v.endsWith("%")) {
         	v = v.substring(0, v.length() - 1);
         	return Float.parseFloat(v)/100;
