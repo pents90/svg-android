@@ -98,6 +98,12 @@ public class SVGParser {
     static final String TAG = "SVGAndroid";
 
     public static float density = 1.0f;
+    public static AssetManager assets = null;
+
+	static HashMap<String, String> textDynamic = null;
+	public static void prepareTexts(HashMap<String, String> texts) {
+		textDynamic = texts;
+	}
 
     /**
      * Parse SVG data from an input stream.
@@ -302,6 +308,10 @@ public class SVGParser {
             handler.setWhiteMode(whiteMode);
             xr.setContentHandler(handler);
             xr.parse(new InputSource(in));
+			if( null != textDynamic ) {
+				textDynamic.clear();
+				textDynamic = null;
+			}
         Log.d("SVG PARSER","Parsing complete in " + (System.currentTimeMillis() - start) + " ms.");
             SVG result = new SVG(picture, handler.bounds);
             // Skip bounds if it was an empty pic
@@ -1708,7 +1718,8 @@ public class SVGParser {
                 strokeSet = strokeSetStack.pop();
             }
         }
-        // class to hold text properties
+  
+		// class to hold text properties
         private class SvgText {
             private final static int MIDDLE = 1;
             private final static int TOP = 2;
@@ -1747,6 +1758,9 @@ public class SVGParser {
                 } else {
                     svgText += new String(ch, start, len);
                 }
+				if( null != textDynamic && textDynamic.containsKey(svgText) ) {
+					svgText = textDynamic.get(svgText);
+				}
 
                 // This is an experiment for vertical alignment
                 if (vAlign > 0) {
@@ -1790,9 +1804,6 @@ public class SVGParser {
             String style = getStringAttr("font-style", atts);
             String weight = getStringAttr("font-weight", atts);
 
-            if (face == null && style == null && weight == null) {
-                return null;
-            }
             int styleParam = Typeface.NORMAL;
             if ("italic".equals(style)) {
                 styleParam |= Typeface.ITALIC;
@@ -1800,9 +1811,16 @@ public class SVGParser {
             if ("bold".equals(weight)) {
                 styleParam |= Typeface.BOLD;
             }
-            Typeface result = Typeface.create(face, styleParam);
+            Typeface plain = null;
+            if( null != face && null != assets && face.indexOf(".ttf") > 0 ) {
+              plain = Typeface.createFromAsset(assets, "fonts/" + face);
+              if( null != plain ) {
+                return Typeface.create(plain, styleParam);
+              }
+            }
+
             // Log.d(TAG, "typeface=" + result + " " + styleParam);
-            return result;
+            return Typeface.create(face, styleParam);
         }
     }
 }
