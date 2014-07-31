@@ -17,3 +17,5 @@ new features:
 
 * supports simple text / tspan from [svg-android](https://github.com/michaelnovakjr/svg-android), [svg-android-2 on google code](https://code.google.com/p/svg-android-2/)
 * fix pt crash bug
+
+Used in a demo android app - [DaSign from Google Play](https://play.google.com/store/apps/details?id=com.mindon.idea.dasign)
