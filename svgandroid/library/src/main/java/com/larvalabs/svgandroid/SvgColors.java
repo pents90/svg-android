@@ -17,7 +17,7 @@ package com.larvalabs.svgandroid;
 
 import java.util.HashMap;
 
-public class SVGColors {
+public class SvgColors {
   private static HashMap<String, Integer> colors = new HashMap<String, Integer>();
   
   public static Integer mapColor(String color) {

@@ -5,17 +5,17 @@ package com.larvalabs.svgandroid;
  *
  * @author Larva Labs, LLC
  */
-public class SVGParseException extends RuntimeException {
+public class SvgParseException extends RuntimeException {
 
-    public SVGParseException(String s) {
+    public SvgParseException(String s) {
         super(s);
     }
 
-    public SVGParseException(String s, Throwable throwable) {
+    public SvgParseException(String s, Throwable throwable) {
         super(s, throwable);
     }
 
-    public SVGParseException(Throwable throwable) {
+    public SvgParseException(Throwable throwable) {
         super(throwable);
     }
 

@@ -27,7 +27,7 @@ import android.view.View;
  *
  * @author Larva Labs, LLC
  */
-public class SVG {
+public class Svg {
 
     /**
      * The parsed Picture object.
@@ -51,7 +51,7 @@ public class SVG {
      * @param picture the parsed picture object.
      * @param bounds  the bounds computed from the "bounds" layer in the SVG.
      */
-    SVG(Picture picture, RectF bounds) {
+    Svg(Picture picture, RectF bounds) {
         this.picture = picture;
         this.bounds = bounds;
     }

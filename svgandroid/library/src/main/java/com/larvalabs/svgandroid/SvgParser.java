@@ -91,7 +91,7 @@ import javax.xml.parsers.SAXParserFactory;
  * @see #getSVGFromInputStream(java.io.InputStream)
  * @see #parsePath(String)
  */
-public class SVGParser {
+public class SvgParser {
 
     static final String TAG = "SVGAndroid";
 
@@ -138,10 +138,10 @@ public class SVGParser {
      *
      * @param svgData the input stream, with SVG XML data in UTF-8 character encoding.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromInputStream(InputStream svgData) throws SVGParseException {
-        return SVGParser.parse(svgData, 0, 0, false);
+    public static Svg getSVGFromInputStream(InputStream svgData) throws SvgParseException {
+        return SvgParser.parse(svgData, 0, 0, false);
     }
 
     /**
@@ -149,10 +149,10 @@ public class SVGParser {
      *
      * @param svgData the string containing SVG XML data.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromString(String svgData) throws SVGParseException {
-        return SVGParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false);
+    public static Svg getSVGFromString(String svgData) throws SvgParseException {
+        return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false);
     }
 
     /**
@@ -161,10 +161,10 @@ public class SVGParser {
      * @param resources the Android context resources.
      * @param resId     the ID of the raw resource SVG.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromResource(Resources resources, int resId) throws SVGParseException {
-        return SVGParser.parse(resources.openRawResource(resId), 0, 0, false);
+    public static Svg getSVGFromResource(Resources resources, int resId) throws SvgParseException {
+        return SvgParser.parse(resources.openRawResource(resId), 0, 0, false);
     }
 
     /**
@@ -173,12 +173,12 @@ public class SVGParser {
      * @param assetMngr the Android asset manager.
      * @param svgPath   the path to the SVG file in the application's assets.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      * @throws IOException       if there was a problem reading the file.
      */
-    public static SVG getSVGFromAsset(AssetManager assetMngr, String svgPath) throws SVGParseException, IOException {
+    public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
-        SVG svg = getSVGFromInputStream(inputStream);
+        Svg svg = getSVGFromInputStream(inputStream);
         inputStream.close();
         return svg;
     }
@@ -187,24 +187,24 @@ public class SVGParser {
      * Parse SVG data from an input stream, replacing a single color with another color.
      *
      * @param svgData      the input stream, with SVG XML data in UTF-8 character encoding.
-     * @param idToColor    map ID to color or SVGParser.hide.
+     * @param idToColor    map ID to color or SvgParser.hide.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromInputStream(InputStream svgData, HashMap<String, Integer> idToColor) throws SVGParseException {
-        return SVGParser.parse(svgData, 0, 0, false, idToColor);
+    public static Svg getSVGFromInputStream(InputStream svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
+        return SvgParser.parse(svgData, 0, 0, false, idToColor);
     }
 
     /**
      * Parse SVG data from a string.
      *
      * @param svgData      the string containing SVG XML data.
-     * @param idToColor    map ID to color or SVGParser.hide.
+     * @param idToColor    map ID to color or SvgParser.hide.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromString(String svgData, HashMap<String, Integer> idToColor) throws SVGParseException {
-        return SVGParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false, idToColor);
+    public static Svg getSVGFromString(String svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
+        return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false, idToColor);
     }
 
     /**
@@ -212,12 +212,12 @@ public class SVGParser {
      *
      * @param resources    the Android context
      * @param resId        the ID of the raw resource SVG.
-     * @param idToColor    map ID to color or SVGParser.hide.
+     * @param idToColor    map ID to color or SvgParser.hide.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromResource(Resources resources, int resId, HashMap<String, Integer> idToColor) throws SVGParseException {
-        return SVGParser.parse(resources.openRawResource(resId), 0, 0, false, idToColor);
+    public static Svg getSVGFromResource(Resources resources, int resId, HashMap<String, Integer> idToColor) throws SvgParseException {
+        return SvgParser.parse(resources.openRawResource(resId), 0, 0, false, idToColor);
     }
 
     /**
@@ -225,14 +225,14 @@ public class SVGParser {
      *
      * @param assetMngr    the Android asset manager.
      * @param svgPath      the path to the SVG file in the application's assets.
-     * @param idToColor    map ID to color or SVGParser.hide.
+     * @param idToColor    map ID to color or SvgParser.hide.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      * @throws IOException       if there was a problem reading the file.
      */
-    public static SVG getSVGFromAsset(AssetManager assetMngr, String svgPath, HashMap<String, Integer> idToColor) throws SVGParseException, IOException {
+    public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath, HashMap<String, Integer> idToColor) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
-        SVG svg = getSVGFromInputStream(inputStream, idToColor);
+        Svg svg = getSVGFromInputStream(inputStream, idToColor);
         inputStream.close();
         return svg;
     }
@@ -243,10 +243,10 @@ public class SVGParser {
      * @param searchColor  the color in the SVG to replace.
      * @param replaceColor the color with which to replace the search color.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromInputStream(InputStream svgData, int searchColor, int replaceColor) throws SVGParseException {
-        return SVGParser.parse(svgData, searchColor, replaceColor, false);
+    public static Svg getSVGFromInputStream(InputStream svgData, int searchColor, int replaceColor) throws SvgParseException {
+        return SvgParser.parse(svgData, searchColor, replaceColor, false);
     }
 
     /**
@@ -256,10 +256,10 @@ public class SVGParser {
      * @param searchColor  the color in the SVG to replace.
      * @param replaceColor the color with which to replace the search color.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromString(String svgData, int searchColor, int replaceColor) throws SVGParseException {
-        return SVGParser.parse(new ByteArrayInputStream(svgData.getBytes()), searchColor, replaceColor, false);
+    public static Svg getSVGFromString(String svgData, int searchColor, int replaceColor) throws SvgParseException {
+        return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), searchColor, replaceColor, false);
     }
 
     /**
@@ -270,10 +270,10 @@ public class SVGParser {
      * @param searchColor  the color in the SVG to replace.
      * @param replaceColor the color with which to replace the search color.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      */
-    public static SVG getSVGFromResource(Resources resources, int resId, int searchColor, int replaceColor) throws SVGParseException {
-        return SVGParser.parse(resources.openRawResource(resId), searchColor, replaceColor, false);
+    public static Svg getSVGFromResource(Resources resources, int resId, int searchColor, int replaceColor) throws SvgParseException {
+        return SvgParser.parse(resources.openRawResource(resId), searchColor, replaceColor, false);
     }
 
     /**
@@ -284,12 +284,12 @@ public class SVGParser {
      * @param searchColor  the color in the SVG to replace.
      * @param replaceColor the color with which to replace the search color.
      * @return the parsed SVG.
-     * @throws SVGParseException if there is an error while parsing.
+     * @throws SvgParseException if there is an error while parsing.
      * @throws IOException       if there was a problem reading the file.
      */
-    public static SVG getSVGFromAsset(AssetManager assetMngr, String svgPath, int searchColor, int replaceColor) throws SVGParseException, IOException {
+    public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath, int searchColor, int replaceColor) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
-        SVG svg = getSVGFromInputStream(inputStream, searchColor, replaceColor);
+        Svg svg = getSVGFromInputStream(inputStream, searchColor, replaceColor);
         inputStream.close();
         return svg;
     }
@@ -305,11 +305,11 @@ public class SVGParser {
         return doPath(pathString);
     }
 
-    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SVGParseException {
+    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SvgParseException {
         return parse(in, searchColor, replaceColor, whiteMode, null);
     }
 
-    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode, HashMap<String, Integer> idToColor) throws SVGParseException {
+    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode, HashMap<String, Integer> idToColor) throws SvgParseException {
 //        Log.d(TAG, "Parsing SVG...");
         sAssumedUnit = null;
         try {
@@ -341,7 +341,7 @@ public class SVGParser {
                 textDynamic = null;
             }
             Log.d(TAG, "Parsing complete in " + (System.currentTimeMillis() - start) + " ms.");
-            SVG result = new SVG(picture, handler.bounds);
+            Svg result = new Svg(picture, handler.bounds);
             // Skip bounds if it was an empty pic
             if (!Float.isInfinite(handler.limits.top)) {
                 result.setLimits(handler.limits);
@@ -349,7 +349,7 @@ public class SVGParser {
             return result;
         } catch (Exception e) {
             Log.e(TAG, "failed parsing SVG", e);
-            throw new SVGParseException(e);
+            throw new SvgParseException(e);
         }
     }
 
@@ -1064,7 +1064,7 @@ public class SVGParser {
 					return null;
 				}
 			} else {
-            	return SVGColors.mapColor(v);
+            	return SvgColors.mapColor(v);
             }
         }
 

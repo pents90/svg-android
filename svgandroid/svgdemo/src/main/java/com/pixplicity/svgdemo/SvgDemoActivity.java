@@ -6,8 +6,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 
-import com.larvalabs.svgandroid.SVG;
-import com.larvalabs.svgandroid.SVGParser;
+import com.larvalabs.svgandroid.Svg;
+import com.larvalabs.svgandroid.SvgParser;
 
 import uk.co.senab.photoview.PhotoViewAttacher;
 
@@ -23,7 +23,7 @@ public class SvgDemoActivity extends AppCompatActivity {
 
         mImageView = (ImageView) findViewById(R.id.iv_image);
 
-        SVG svg = SVGParser.getSVGFromResource(getResources(), R.drawable.cartman);
+        Svg svg = SvgParser.getSVGFromResource(getResources(), R.drawable.cartman);
         mImageView.setImageDrawable(svg.createDrawable(mImageView));
 
         mAttacher = new PhotoViewAttacher(mImageView);
