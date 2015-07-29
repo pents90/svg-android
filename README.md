@@ -5,8 +5,8 @@ Forked from:
 https://github.com/pents90/svg-android
 
 Merged changes from forks:  
-https://github.com/b2renger/svg-android
-https://github.com/mindon/svg-android
+https://github.com/b2renger/svg-android  
+https://github.com/mindon/svg-android  
 https://github.com/josefpavlik/svg-android
 
 ## Sample
