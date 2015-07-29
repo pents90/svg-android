@@ -306,6 +306,10 @@ public class SVGParser {
     }
 
     private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SVGParseException {
+        return parse(in, searchColor, replaceColor, whiteMode, null);
+    }
+
+    private static SVG parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode, HashMap<String, Integer> idToColor) throws SVGParseException {
 //        Log.d(TAG, "Parsing SVG...");
         sAssumedUnit = null;
         try {
