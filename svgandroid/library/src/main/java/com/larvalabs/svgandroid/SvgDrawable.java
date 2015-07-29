@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.graphics.Picture;
 import android.graphics.drawable.PictureDrawable;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import android.view.View;
 
 public class SvgDrawable extends PictureDrawable {
@@ -17,7 +18,7 @@ public class SvgDrawable extends PictureDrawable {
      * @param picture The picture to associate with the drawable. May be null.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public SvgDrawable(View view, Picture picture) {
+    public SvgDrawable(@Nullable View view, Picture picture) {
         super(picture);
         if (view != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);

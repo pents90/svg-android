@@ -3,6 +3,7 @@ package com.larvalabs.svgandroid;
 import android.graphics.Picture;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.Nullable;
 import android.view.View;
 
 /*
@@ -72,7 +73,7 @@ public class Svg {
      * @param view {@link View} that will hold this drawable
      * @return the Drawable.
      */
-    public Drawable createDrawable(View view) {
+    public Drawable createDrawable(@Nullable View view) {
         return new SvgDrawable(view, picture);
     }
 
