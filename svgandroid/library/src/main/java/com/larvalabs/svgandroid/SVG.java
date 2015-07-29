@@ -2,7 +2,8 @@ package com.larvalabs.svgandroid;
 
 import android.graphics.Picture;
 import android.graphics.RectF;
-import android.graphics.drawable.PictureDrawable;
+import android.graphics.drawable.Drawable;
+import android.view.View;
 
 /*
    Licensed to the Apache Software Foundation (ASF) under one or more
@@ -65,34 +66,14 @@ public class SVG {
     }
 
     /**
-     * Create a picture drawable from the SVG.
+     * Create a drawable from the SVG. A view may be provided so that it's LayerType is set to
+     * LAYER_TYPE_SOFTWARE.
      *
-     * @return the PictureDrawable.
+     * @param view {@link View} that will hold this drawable
+     * @return the Drawable.
      */
-    public PictureDrawable createPictureDrawable() {
-        return new PictureDrawable(picture) {
-            @Override
-            public int getIntrinsicWidth() {
-                if (bounds != null) {
-                    return (int) Math.ceil(bounds.width());
-                } else if (limits != null) {
-                    return (int) Math.ceil(limits.width());
-                } else {
-                    return -1;
-                }
-            }
-
-            @Override
-            public int getIntrinsicHeight() {
-                if (bounds != null) {
-                    return (int) Math.ceil(bounds.height());
-                } else if (limits != null) {
-                    return (int) Math.ceil(limits.height());
-                } else {
-                    return -1;
-                }
-            }
-        };
+    public Drawable createDrawable(View view) {
+        return new SvgDrawable(view, picture);
     }
 
     /**

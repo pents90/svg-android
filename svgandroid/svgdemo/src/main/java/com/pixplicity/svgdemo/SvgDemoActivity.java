@@ -9,17 +9,24 @@ import android.widget.ImageView;
 import com.larvalabs.svgandroid.SVG;
 import com.larvalabs.svgandroid.SVGParser;
 
+import uk.co.senab.photoview.PhotoViewAttacher;
+
 public class SvgDemoActivity extends AppCompatActivity {
+
+    private ImageView mImageView;
+    private PhotoViewAttacher mAttacher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_svg_demo);
 
-        ImageView iv = (ImageView) findViewById(R.id.iv_image);
+        mImageView = (ImageView) findViewById(R.id.iv_image);
 
-        SVG svg = SVGParser.getSVGFromResource(getResources(), R.drawable.android);
-        iv.setImageDrawable(svg.createPictureDrawable());
+        SVG svg = SVGParser.getSVGFromResource(getResources(), R.drawable.cartman);
+        mImageView.setImageDrawable(svg.createDrawable(mImageView));
+
+        mAttacher = new PhotoViewAttacher(mImageView);
     }
 
     @Override
