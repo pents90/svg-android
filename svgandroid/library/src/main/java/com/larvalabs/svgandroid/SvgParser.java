@@ -85,10 +85,10 @@ import javax.xml.parsers.SAXParserFactory;
  * You can also parse an svg path directly.
  *
  * @author Larva Labs, LLC
- * @see #getSVGFromResource(android.content.res.Resources, int)
- * @see #getSVGFromAsset(android.content.res.AssetManager, String)
- * @see #getSVGFromString(String)
- * @see #getSVGFromInputStream(java.io.InputStream)
+ * @see #parseFromResource(android.content.res.Resources, int)
+ * @see #parseFromAsset(android.content.res.AssetManager, String)
+ * @see #parseFromString(String)
+ * @see #parseFromInputStream(java.io.InputStream)
  * @see #parsePath(String)
  */
 public class SvgParser {
@@ -143,7 +143,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromInputStream(InputStream svgData) throws SvgParseException {
+    public static SvgHandler parseFromInputStream(InputStream svgData) throws SvgParseException {
         return SvgParser.parse(svgData, 0, 0, false);
     }
 
@@ -155,7 +155,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromString(String svgData) throws SvgParseException {
+    public static SvgHandler parseFromString(String svgData) throws SvgParseException {
         return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false);
     }
 
@@ -168,7 +168,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromResource(Resources resources, int resId) throws SvgParseException {
+    public static SvgHandler parseFromResource(Resources resources, int resId) throws SvgParseException {
         return SvgParser.parse(resources.openRawResource(resId), 0, 0, false);
     }
 
@@ -182,11 +182,11 @@ public class SvgParser {
      * @throws IOException       if there was a problem reading the file.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath) throws SvgParseException, IOException {
+    public static SvgHandler parseFromAsset(AssetManager assetMngr, String svgPath) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
-        Svg svg = getSVGFromInputStream(inputStream);
+        SvgHandler svgHandler = parseFromInputStream(inputStream);
         inputStream.close();
-        return svg;
+        return svgHandler;
     }
 
     /**
@@ -198,7 +198,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromInputStream(InputStream svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
+    public static SvgHandler parseFromInputStream(InputStream svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
         return SvgParser.parse(svgData, 0, 0, false, idToColor);
     }
 
@@ -211,7 +211,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromString(String svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
+    public static SvgHandler parseFromString(String svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
         return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false, idToColor);
     }
 
@@ -225,7 +225,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromResource(Resources resources, int resId, HashMap<String, Integer> idToColor) throws SvgParseException {
+    public static SvgHandler parseFromResource(Resources resources, int resId, HashMap<String, Integer> idToColor) throws SvgParseException {
         return SvgParser.parse(resources.openRawResource(resId), 0, 0, false, idToColor);
     }
 
@@ -240,11 +240,11 @@ public class SvgParser {
      * @throws IOException       if there was a problem reading the file.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath, HashMap<String, Integer> idToColor) throws SvgParseException, IOException {
+    public static SvgHandler parseFromAsset(AssetManager assetMngr, String svgPath, HashMap<String, Integer> idToColor) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
-        Svg svg = getSVGFromInputStream(inputStream, idToColor);
+        SvgHandler svgHandler = parseFromInputStream(inputStream, idToColor);
         inputStream.close();
-        return svg;
+        return svgHandler;
     }
 
     /**
@@ -257,7 +257,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromInputStream(InputStream svgData, int searchColor, int replaceColor) throws SvgParseException {
+    public static SvgHandler parseFromInputStream(InputStream svgData, int searchColor, int replaceColor) throws SvgParseException {
         return SvgParser.parse(svgData, searchColor, replaceColor, false);
     }
 
@@ -271,7 +271,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromString(String svgData, int searchColor, int replaceColor) throws SvgParseException {
+    public static SvgHandler parseFromString(String svgData, int searchColor, int replaceColor) throws SvgParseException {
         return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), searchColor, replaceColor, false);
     }
 
@@ -286,7 +286,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromResource(Resources resources, int resId, int searchColor, int replaceColor) throws SvgParseException {
+    public static SvgHandler parseFromResource(Resources resources, int resId, int searchColor, int replaceColor) throws SvgParseException {
         return SvgParser.parse(resources.openRawResource(resId), searchColor, replaceColor, false);
     }
 
@@ -302,11 +302,11 @@ public class SvgParser {
      * @throws IOException       if there was a problem reading the file.
      */
     @SuppressWarnings("unused")
-    public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath, int searchColor, int replaceColor) throws SvgParseException, IOException {
+    public static SvgHandler parseFromAsset(AssetManager assetMngr, String svgPath, int searchColor, int replaceColor) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
-        Svg svg = getSVGFromInputStream(inputStream, searchColor, replaceColor);
+        SvgHandler svgHandler = parseFromInputStream(inputStream, searchColor, replaceColor);
         inputStream.close();
-        return svg;
+        return svgHandler;
     }
 
 
@@ -321,13 +321,13 @@ public class SvgParser {
         return doPath(pathString);
     }
 
-    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor,
-                             boolean whiteMode) throws SvgParseException {
+    private static SvgHandler parse(InputStream in, Integer searchColor, Integer replaceColor,
+                                    boolean whiteMode) throws SvgParseException {
         return parse(in, searchColor, replaceColor, whiteMode, null);
     }
 
-    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor,
-                             boolean whiteMode, HashMap<String, Integer> idToColor)
+    private static SvgHandler parse(InputStream in, Integer searchColor, Integer replaceColor,
+                                    boolean whiteMode, HashMap<String, Integer> idToColor)
             throws SvgParseException {
         //Log.d(TAG, "Parsing SVG...");
         sAssumedUnit = null;
@@ -348,23 +348,18 @@ public class SvgParser {
             SAXParser sp = spf.newSAXParser();
             XMLReader xr = sp.getXMLReader();
             final Picture picture = new Picture();
-            SVGHandler handler = new SVGHandler(picture);
+            SvgHandler handler = new SvgHandler(picture);
             handler.setColorSwap(searchColor, replaceColor);
             handler.setIdToColor(idToColor);
             handler.setWhiteMode(whiteMode);
             xr.setContentHandler(handler);
             xr.parse(new InputSource(in));
-            if (null != textDynamic) {
+            if (textDynamic != null) {
                 textDynamic.clear();
                 textDynamic = null;
             }
             Log.d(TAG, "Parsing complete in " + (System.currentTimeMillis() - start) + " ms.");
-            Svg result = new Svg(picture, handler.bounds);
-            // Skip bounds if it was an empty pic
-            if (!Float.isInfinite(handler.limits.top)) {
-                result.setLimits(handler.limits);
-            }
-            return result;
+            return handler;
         } catch (Exception e) {
             Log.e(TAG, "failed parsing SVG", e);
             throw new SvgParseException(e);
@@ -1087,7 +1082,7 @@ public class SvgParser {
         }
     }
 
-    private static class SVGHandler extends DefaultHandler {
+    public static class SvgHandler extends DefaultHandler {
 
         Picture picture;
         Canvas canvas;
@@ -1122,7 +1117,7 @@ public class SvgParser {
         HashMap<String, String> defs = new HashMap<>();
         boolean defsReading = false;
 
-        private SVGHandler(Picture picture) {
+        private SvgHandler(Picture picture) {
             this.picture = picture;
 
             strokePaint = new Paint();
@@ -1134,6 +1129,15 @@ public class SvgParser {
             fillPaint.setStyle(Paint.Style.FILL);
 
             matrixStack.push(new Matrix());
+        }
+
+        public BoundedPicture getBoundedPicture() {
+            BoundedPicture result = new BoundedPicture(picture, bounds);
+            // Skip bounds if it was an empty pic
+            if (!Float.isInfinite(limits.top)) {
+                result.setLimits(limits);
+            }
+            return result;
         }
 
         public void setIdToColor(HashMap<String, Integer> idToColor) {
