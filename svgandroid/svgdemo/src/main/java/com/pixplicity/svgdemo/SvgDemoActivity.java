@@ -23,8 +23,8 @@ public class SvgDemoActivity extends AppCompatActivity {
 
         mImageView = (ImageView) findViewById(R.id.iv_image);
 
-        BoundedPicture picture = SvgParser.parseFromResource(getResources(), R.drawable.cartman)
-                                          .getBoundedPicture();
+        SvgParser.SvgHandler handler = SvgParser.parseFromResource(getResources(), R.drawable.cartman);
+        BoundedPicture picture = handler.getBoundedPicture();
         mImageView.setImageDrawable(picture.createDrawable(mImageView));
 
         mAttacher = new PhotoViewAttacher(mImageView);
