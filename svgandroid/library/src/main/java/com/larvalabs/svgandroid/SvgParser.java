@@ -563,7 +563,7 @@ public class SvgParser {
      */
     private static Path doPath(String s) {
         int n = s.length();
-        ParserHelper ph = new ParserHelper(s, 0);
+        SvgParserHelper ph = new SvgParserHelper(s, 0);
         ph.skipWhitespace();
         Path p = new Path();
         float lastX = 0;

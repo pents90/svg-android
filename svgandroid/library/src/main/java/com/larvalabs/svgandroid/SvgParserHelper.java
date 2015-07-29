@@ -22,14 +22,14 @@ package com.larvalabs.svgandroid;
  *
  * @author Apache Software Foundation, Larva Labs LLC
  */
-public class ParserHelper {
+public class SvgParserHelper {
 
     private char current;
     private CharSequence s;
     public int pos;
     private int n;
 
-    public ParserHelper(CharSequence s, int pos) {
+    public SvgParserHelper(CharSequence s, int pos) {
         this.s = s;
         this.pos = pos;
         n = s.length();
