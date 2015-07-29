@@ -398,4 +398,12 @@ public class ParserHelper {
         return f;
     }
 
+    public int nextFlag() {
+        skipWhitespace();
+        int flag = current - '0';
+        current = read();
+        skipNumberSeparator();
+        return flag;
+    }
+
 }
