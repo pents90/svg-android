@@ -1589,6 +1589,7 @@ public class SvgParser {
                     gradient.colors.add(color);
                 }
             } else if (localName.equals("g")) {
+                Properties props = new Properties(atts);
                 // Check to see if this is the "bounds" layer
                 if ("bounds".equalsIgnoreCase(getStringAttr("id", atts))) {
                     boundsMode = true;
@@ -1598,7 +1599,7 @@ public class SvgParser {
                     //Log.d(TAG, "Hidden up: " + hiddenLevel);
                 }
                 // Go in to hidden mode if display is "none"
-                if ("none".equals(getStringAttr("display", atts)) || forcedToHide) {
+                if ("none".equals(props.getString("display")) || forcedToHide) {
                     if (!hidden) {
                         hidden = true;
                         hiddenLevel = 1;
@@ -1608,7 +1609,6 @@ public class SvgParser {
                     pushTransform(atts);
                 }
                 pushTransform(atts);
-                Properties props = new Properties(atts);
 
                 fillPaintStack.push(new Paint(fillPaint));
                 strokePaintStack.push(new Paint(strokePaint));
