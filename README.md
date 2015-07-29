@@ -15,8 +15,9 @@ https://github.com/josefpavlik/svg-android
 
 It's easy to load an SVG:
 
-    Svg svg = SvgParser.getSVGFromResource(getResources(), R.drawable.cartman);
-    imageView.setImageDrawable(svg.createDrawable(imageView));
+    BoundedPicture picture = SvgParser.parseFromResource(getResources(), R.drawable.cartman)
+                                      .getBoundedPicture();
+    mImageView.setImageDrawable(picture.createDrawable(mImageView));
 
 You do not necessarily need to provide the view into `svg.createDrawable()`; the optional View parameter simply takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
 
