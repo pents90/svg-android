@@ -53,29 +53,29 @@ import javax.xml.parsers.SAXParserFactory;
    See the License for the specific language governing permissions and
    limitations under the License.
 
-	History:
-		original version from https://github.com/pents90/svg-android.git
-		forked 2012-11-20 by Josef Pavlik josef@pavlik.it
-		current git:
-		git@github.com:josefpavlik/svg-android.git
-		
-	changelog:
-		2012-11-20 multiple color and visibility changing, bugfixes 
-		2012-12-17 path command ARCTO implemented (function drawarc)
-		2012-12-20 gradient support for attr 'gradientUnits' and 'spreadMethod' 
-		2012-12-20 content bounding-box check enhanced 
-		2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
-		2012-12-27 default color bug fixed, history added
-		2013-01-03 gradient forward reference allowed
-		2013-01-03 float number parse bug fixed
-		2013-01-03 rounded rectangle supported
-		2013-01-03 named color handling enhanced, (thanks to Stephen Uhler, http://code.google.com/p/svg-android-2)
-		2013-01-03 zipped svg supported - autodetect, only if stream is seekable, works with svg in resources
-		
-	todo:
-		inherit colors and other attributes from parent group
-		split svg by layers to map<layerName. picture>
-		
+    History:
+        original version from https://github.com/pents90/svg-android.git
+        forked 2012-11-20 by Josef Pavlik josef@pavlik.it
+        current git:
+        git@github.com:josefpavlik/svg-android.git
+        
+    changelog:
+        2012-11-20 multiple color and visibility changing, bugfixes 
+        2012-12-17 path command ARCTO implemented (function drawarc)
+        2012-12-20 gradient support for attr 'gradientUnits' and 'spreadMethod' 
+        2012-12-20 content bounding-box check enhanced 
+        2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
+        2012-12-27 default color bug fixed, history added
+        2013-01-03 gradient forward reference allowed
+        2013-01-03 float number parse bug fixed
+        2013-01-03 rounded rectangle supported
+        2013-01-03 named color handling enhanced, (thanks to Stephen Uhler, http://code.google.com/p/svg-android-2)
+        2013-01-03 zipped svg supported - autodetect, only if stream is seekable, works with svg in resources
+        
+    todo:
+        inherit colors and other attributes from parent group
+        split svg by layers to map<layerName. picture>
+        
  */
 
 /**
@@ -130,6 +130,7 @@ public class SvgParser {
 
     static HashMap<String, String> textDynamic = null;
 
+    @SuppressWarnings("unused")
     public static void prepareTexts(HashMap<String, String> texts) {
         textDynamic = texts;
     }
@@ -141,6 +142,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromInputStream(InputStream svgData) throws SvgParseException {
         return SvgParser.parse(svgData, 0, 0, false);
     }
@@ -152,6 +154,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromString(String svgData) throws SvgParseException {
         return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false);
     }
@@ -164,6 +167,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromResource(Resources resources, int resId) throws SvgParseException {
         return SvgParser.parse(resources.openRawResource(resId), 0, 0, false);
     }
@@ -177,6 +181,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      * @throws IOException       if there was a problem reading the file.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
         Svg svg = getSVGFromInputStream(inputStream);
@@ -192,6 +197,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromInputStream(InputStream svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
         return SvgParser.parse(svgData, 0, 0, false, idToColor);
     }
@@ -204,6 +210,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromString(String svgData, HashMap<String, Integer> idToColor) throws SvgParseException {
         return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), 0, 0, false, idToColor);
     }
@@ -217,6 +224,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromResource(Resources resources, int resId, HashMap<String, Integer> idToColor) throws SvgParseException {
         return SvgParser.parse(resources.openRawResource(resId), 0, 0, false, idToColor);
     }
@@ -231,6 +239,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      * @throws IOException       if there was a problem reading the file.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath, HashMap<String, Integer> idToColor) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
         Svg svg = getSVGFromInputStream(inputStream, idToColor);
@@ -247,6 +256,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromInputStream(InputStream svgData, int searchColor, int replaceColor) throws SvgParseException {
         return SvgParser.parse(svgData, searchColor, replaceColor, false);
     }
@@ -260,6 +270,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromString(String svgData, int searchColor, int replaceColor) throws SvgParseException {
         return SvgParser.parse(new ByteArrayInputStream(svgData.getBytes()), searchColor, replaceColor, false);
     }
@@ -274,6 +285,7 @@ public class SvgParser {
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromResource(Resources resources, int resId, int searchColor, int replaceColor) throws SvgParseException {
         return SvgParser.parse(resources.openRawResource(resId), searchColor, replaceColor, false);
     }
@@ -289,6 +301,7 @@ public class SvgParser {
      * @throws SvgParseException if there is an error while parsing.
      * @throws IOException       if there was a problem reading the file.
      */
+    @SuppressWarnings("unused")
     public static Svg getSVGFromAsset(AssetManager assetMngr, String svgPath, int searchColor, int replaceColor) throws SvgParseException, IOException {
         InputStream inputStream = assetMngr.open(svgPath);
         Svg svg = getSVGFromInputStream(inputStream, searchColor, replaceColor);
@@ -303,16 +316,20 @@ public class SvgParser {
      *
      * @param pathString the SVG path, see the specification <a href="http://www.w3.org/TR/SVG/paths.html">here</a>.
      */
+    @SuppressWarnings("unused")
     public static Path parsePath(String pathString) {
         return doPath(pathString);
     }
 
-    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode) throws SvgParseException {
+    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor,
+                             boolean whiteMode) throws SvgParseException {
         return parse(in, searchColor, replaceColor, whiteMode, null);
     }
 
-    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor, boolean whiteMode, HashMap<String, Integer> idToColor) throws SvgParseException {
-//        Log.d(TAG, "Parsing SVG...");
+    private static Svg parse(InputStream in, Integer searchColor, Integer replaceColor,
+                             boolean whiteMode, HashMap<String, Integer> idToColor)
+            throws SvgParseException {
+        //Log.d(TAG, "Parsing SVG...");
         sAssumedUnit = null;
         try {
             if (in.markSupported()) {
@@ -323,8 +340,7 @@ public class SvgParser {
                 in.reset();
                 if (r == 2 && magicInt == GZIPInputStream.GZIP_MAGIC) {
                     Log.d("svgparser", "SVG is gzipped");
-                    GZIPInputStream gin = new GZIPInputStream(in);
-                    in = (InputStream) gin;
+                    in = new GZIPInputStream(in);
                 }
             }
             long start = System.currentTimeMillis();
@@ -359,7 +375,7 @@ public class SvgParser {
         //Log.d(TAG, "Parsing numbers from: '" + s + "'");
         int n = s.length();
         int p = 0;
-        ArrayList<Float> numbers = new ArrayList<Float>();
+        ArrayList<Float> numbers = new ArrayList<>();
         boolean skipChar = false;
         for (int i = 1; i < n; i++) {
             if (skipChar) {
@@ -513,8 +529,7 @@ public class SvgParser {
         np = readTransform(s, "rotate");
         if (null != np) {
             float angle = np.numbers.get(0);
-            float cx = 0;
-            float cy = 0;
+            float cx, cy;
             if (np.numbers.size() > 2) {
                 cx = np.numbers.get(1);
                 cy = np.numbers.get(2);
@@ -729,8 +744,8 @@ public class SvgParser {
                     float rx = ph.nextFloat();
                     float ry = ph.nextFloat();
                     float theta = ph.nextFloat();
-                    int largeArc = (int) ph.nextFlag();
-                    int sweepArc = (int) ph.nextFlag();
+                    int largeArc = ph.nextFlag();
+                    int sweepArc = ph.nextFlag();
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
@@ -753,7 +768,6 @@ public class SvgParser {
     }
 
     private static float angle(float x1, float y1, float x2, float y2) {
-
         return (float) Math.toDegrees(Math.atan2(x1, y1) - Math.atan2(x2, y2)) % 360;
     }
 
@@ -762,9 +776,9 @@ public class SvgParser {
     private static final Matrix arcMatrix2 = new Matrix();
 
     private static void drawArc(Path p, float lastX, float lastY, float x, float y, float rx, float ry, float theta, int largeArc, int sweepArc) {
-//		Log.d("drawArc", "from (" + lastX + "," + lastY + ") to (" + x + ","+ y + ") r=(" + rx + "," + ry + ") theta=" + theta + " flags="+ largeArc + "," + sweepArc);
+        //Log.d("drawArc", "from (" + lastX + "," + lastY + ") to (" + x + ","+ y + ") r=(" + rx + "," + ry + ") theta=" + theta + " flags="+ largeArc + "," + sweepArc);
 
-// http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+        // http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
 
         if (rx == 0 || ry == 0) {
             p.lineTo(x, y);
@@ -889,7 +903,7 @@ public class SvgParser {
                 checkAssumedUnits(unit.abbreviation);
                 scaleFactor = unit.scaleFactor;
             }
-//            Log.d(TAG, "Float parsing '" + name + "=" + value + "'");
+            //Log.d(TAG, "Float parsing '" + name + "=" + value + "'");
             return valueF * scaleFactor;
         }
     }
@@ -934,44 +948,13 @@ public class SvgParser {
         boolean isLinear;
         float x1, y1, x2, y2;
         float x, y, radius;
-        ArrayList<Float> positions = new ArrayList<Float>();
-        ArrayList<Integer> colors = new ArrayList<Integer>();
+        ArrayList<Float> positions = new ArrayList<>();
+        ArrayList<Integer> colors = new ArrayList<>();
         Matrix matrix = null;
         public Shader shader = null;
         public boolean boundingBox = false;
         public TileMode tilemode;
 
-        /*
-                public Gradient createChild(Gradient g) {
-                    Gradient child = new Gradient();
-                    child.id = g.id;
-                    child.xlink = id;
-                    child.isLinear = g.isLinear;
-                    child.x1 = g.x1;
-                    child.x2 = g.x2;
-                    child.y1 = g.y1;
-                    child.y2 = g.y2;
-                    child.x = g.x;
-                    child.y = g.y;
-                    child.radius = g.radius;
-                    child.positions = positions;
-                    child.colors = colors;
-                    child.matrix = matrix;
-                    if (g.matrix != null) {
-                        if (matrix == null) {
-                            child.matrix = g.matrix;
-                        } else {
-                            Matrix m = new Matrix(matrix);
-                            m.preConcat(g.matrix);
-                            child.matrix = m;
-                        }
-                    }
-                    child.boundingBox = g.boundingBox;
-                    child.shader = g.shader;
-                    child.tilemode = g.tilemode;
-                    return child;
-                }
-        */
         public void inherit(Gradient parent) {
             Gradient child = this;
             child.xlink = parent.id;
@@ -988,7 +971,7 @@ public class SvgParser {
     }
 
     private static class StyleSet {
-        HashMap<String, String> styleMap = new HashMap<String, String>();
+        HashMap<String, String> styleMap = new HashMap<>();
 
         private StyleSet(String string) {
             String[] styles = string.split(";");
@@ -1110,13 +1093,13 @@ public class SvgParser {
         Canvas canvas;
         Paint strokePaint;
         boolean strokeSet = false;
-        Stack<Paint> strokePaintStack = new Stack<Paint>();
-        Stack<Boolean> strokeSetStack = new Stack<Boolean>();
+        Stack<Paint> strokePaintStack = new Stack<>();
+        Stack<Boolean> strokeSetStack = new Stack<>();
 
         Paint fillPaint;
         boolean fillSet = false;
-        Stack<Paint> fillPaintStack = new Stack<Paint>();
-        Stack<Boolean> fillSetStack = new Stack<Boolean>();
+        Stack<Paint> fillPaintStack = new Stack<>();
+        Stack<Boolean> fillSetStack = new Stack<>();
         // Scratch rect (so we aren't constantly making new ones)
         RectF rect = new RectF();
         RectF bounds = null;
@@ -1128,15 +1111,15 @@ public class SvgParser {
 
         boolean whiteMode = false;
 
-        Stack<Boolean> transformStack = new Stack<Boolean>();
-        Stack<Matrix> matrixStack = new Stack<Matrix>();
+        Stack<Boolean> transformStack = new Stack<>();
+        Stack<Matrix> matrixStack = new Stack<>();
 
-        HashMap<String, Gradient> gradientMap = new HashMap<String, Gradient>();
+        HashMap<String, Gradient> gradientMap = new HashMap<>();
         Gradient gradient = null;
 
-        final Stack<SvgText> textStack = new Stack<SvgText>();
+        final Stack<SvgText> textStack = new Stack<>();
 
-        HashMap<String, String> defs = new HashMap<String, String>();
+        HashMap<String, String> defs = new HashMap<>();
         boolean defsReading = false;
 
         private SVGHandler(Picture picture) {
@@ -1203,7 +1186,7 @@ public class SvgParser {
                         if (null != bounding_box) {
                             gradMatrix.set(g.matrix);
                             if (g.boundingBox) {
-                                //                    	Log.d("svg", "gradient is bounding box");
+                                //Log.d("svg", "gradient is bounding box");
                                 gradMatrix.preTranslate(bounding_box.left, bounding_box.top);
                                 gradMatrix.preScale(bounding_box.width(), bounding_box.height());
                             }
@@ -1377,7 +1360,7 @@ public class SvgParser {
 
         private void doColor(Properties atts, Integer color, boolean fillMode, Paint paint) {
             int c = (0xFFFFFF & color) | 0xFF000000;
-            if (searchColor != null && searchColor.intValue() == c) {
+            if (searchColor != null && searchColor == c) {
                 c = replaceColor;
             }
             if (idToColor != null) {
@@ -1789,47 +1772,55 @@ public class SvgParser {
         @Override
         public void endElement(String namespaceURI, String localName, String qName)
                 throws SAXException {
-            if (localName.equals("svg")) {
-                picture.endRecording();
-                // clear
-                defs.clear();
-                defs = null;
-            } else if (localName.equals("text") || localName.equals("tspan")) {
-                if (!textStack.isEmpty()) {
-                    SvgText text = textStack.pop();
-                    text.render(canvas);
-                }
-                if (localName.equals("text")) {
-                    popTransform();
-                }
-            } else if (localName.equals("linearGradient") || localName.equals("radialGradient")) {
-                if (gradient.id != null) {
-                    gradientMap.put(gradient.id, gradient);
-                }
-            } else if (localName.equals("defs")) {
-                finishGradients();
-                defsReading = false;
-            } else if (localName.equals("g")) {
-                if (boundsMode) {
-                    boundsMode = false;
-                }
-                // Break out of hidden mode
-                if (hidden) {
-                    hiddenLevel--;
-                    //Log.d(TAG, "Hidden down: " + hiddenLevel);
-                    if (hiddenLevel == 0) {
-                        hidden = false;
+            switch (localName) {
+                case "svg":
+                    picture.endRecording();
+                    // clear
+                    defs.clear();
+                    defs = null;
+                    break;
+                case "text":
+                case "tspan":
+                    if (!textStack.isEmpty()) {
+                        SvgText text = textStack.pop();
+                        text.render(canvas);
                     }
-                } else {
-                    popTransform();
-                }
+                    if (localName.equals("text")) {
+                        popTransform();
+                    }
+                    break;
+                case "linearGradient":
+                case "radialGradient":
+                    if (gradient.id != null) {
+                        gradientMap.put(gradient.id, gradient);
+                    }
+                    break;
+                case "defs":
+                    finishGradients();
+                    defsReading = false;
+                    break;
+                case "g":
+                    if (boundsMode) {
+                        boundsMode = false;
+                    }
+                    // Break out of hidden mode
+                    if (hidden) {
+                        hiddenLevel--;
+                        //Log.d(TAG, "Hidden down: " + hiddenLevel);
+                        if (hiddenLevel == 0) {
+                            hidden = false;
+                        }
+                    } else {
+                        popTransform();
+                    }
 //                // Clear gradient map
 //                gradientRefMap.clear();
-                popTransform();
-                fillPaint = fillPaintStack.pop();
-                fillSet = fillSetStack.pop();
-                strokePaint = strokePaintStack.pop();
-                strokeSet = strokeSetStack.pop();
+                    popTransform();
+                    fillPaint = fillPaintStack.pop();
+                    fillSet = fillSetStack.pop();
+                    strokePaint = strokePaintStack.pop();
+                    strokeSet = strokeSetStack.pop();
+                    break;
             }
         }
 
@@ -1942,7 +1933,7 @@ public class SvgParser {
         if (sAssumedUnit == null) {
             sAssumedUnit = unit;
         }
-        if (sAssumedUnit != unit) {
+        if (!sAssumedUnit.equals(unit)) {
             throw new IllegalStateException("Mixing units; SVG contains both " + sAssumedUnit + " and " + unit);
         }
     }
