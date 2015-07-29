@@ -27,6 +27,7 @@ public class SvgDemoActivity extends AppCompatActivity {
         mImageView.setImageDrawable(svg.createDrawable(mImageView));
 
         mAttacher = new PhotoViewAttacher(mImageView);
+        mAttacher.setMaximumScale(10f);
     }
 
     @Override
