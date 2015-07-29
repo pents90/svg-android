@@ -1,21 +1,25 @@
 svg-android
 ===========
 
-Support for scalable vector graphics in Android
+Forked from:  
+https://github.com/pents90/svg-android
 
-this is fork of the svg-android from https://code.google.com/p/svg-android/
+Merged changes from forks:  
+https://github.com/b2renger/svg-android
+https://github.com/mindon/svg-android
+https://github.com/josefpavlik/svg-android
 
-many missing features was added, many bugs was fixed and I hope that only few of new bugs was introduced :-)
+## Sample
 
-new features:
-* SVGZ - zipped svg is auto detected and supported (only on seekable input stream, i.e. file or resource)
-* colors can be replaced by their id (including hiding objects replacing their color by Color.TRANSPARENT)
-* ARC on path is supported
-* named colors are supported
-* gradient handling improved
-* and many other issues fixed
+[A sample](https://github.com/Pixplicity/svg-android/tree/master/svgandroid/svgdemo) is included in this repository.
 
-* supports simple text / tspan from [svg-android](https://github.com/michaelnovakjr/svg-android), [svg-android-2 on google code](https://code.google.com/p/svg-android-2/)
-* fix pt crash bug
+It's easy to load an SVG:
 
-Used in a demo android app - [DaSign from Google Play](https://play.google.com/store/apps/details?id=com.mindon.idea.dasign)
+    Svg svg = SvgParser.getSVGFromResource(getResources(), R.drawable.cartman);
+    imageView.setImageDrawable(svg.createDrawable(imageView));
+
+You do not necessarily need to provide the view into `svg.createDrawable()`; the optional View parameter simply takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
+
+## Why no hardware acceleration?
+
+Excellent question! Aside from the fact that PictureDrawable doesn't render correctly, paths do not efficiently render in hardware acceleration. Even if it worked, it would have poor performance. [Read this excellent discussion](http://stackoverflow.com/questions/15039829/drawing-paths-and-hardware-acceleration) about why this is, if you're interested.
