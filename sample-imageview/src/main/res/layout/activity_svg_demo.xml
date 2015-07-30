@@ -6,7 +6,7 @@
     android:orientation="vertical"
     tools:context=".SvgDemoActivity">
 
-    <com.pixplicity.svgdemo.TouchImageView
+    <ImageView
         android:id="@+id/iv_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:drawablePadding="8dp"
-            android:text="Button"/>
+            android:text="@string/change_color"/>
 
     </FrameLayout>
 

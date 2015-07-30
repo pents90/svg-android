@@ -37,15 +37,15 @@ public class SvgDemoActivity extends AppCompatActivity {
 
         mSvg = SvgParser.parseFromResource(getResources(), R.drawable.cartman);
 
-        mImageView.setOnClickListener(new View.OnClickListener() {
+        mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 reloadSvg();
             }
         });
 
-        //mAttacher = new PhotoViewAttacher(mImageView);
-        //mAttacher.setMaximumScale(10f);
+        mAttacher = new PhotoViewAttacher(mImageView);
+        mAttacher.setMaximumScale(10f);
 
         reloadSvg();
     }
@@ -71,13 +71,14 @@ public class SvgDemoActivity extends AppCompatActivity {
 
         {
             Drawable drawable = picture.createDrawable(mButton);
-            drawable.setBounds(0, 0, 200, 200);
+            int iconSize = getResources().getDimensionPixelSize(R.dimen.icon_size);
+            drawable.setBounds(0, 0, iconSize, iconSize);
             mButton.setCompoundDrawables(
                     drawable,
                     null, null, null);
         }
 
-        //mAttacher.update();
+        mAttacher.update();
     }
 
     @Override
