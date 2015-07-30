@@ -2,11 +2,13 @@ package com.pixplicity.svgdemo;
 
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 
 import com.larvalabs.svgandroid.BoundedPicture;
@@ -20,17 +22,21 @@ import uk.co.senab.photoview.PhotoViewAttacher;
 public class SvgDemoActivity extends AppCompatActivity {
 
     private ImageView mImageView;
+    private Button mButton;
+
     private PhotoViewAttacher mAttacher;
-    private SvgParser mSvgCartman;
+    private SvgParser mSvg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_svg_demo);
 
-        mSvgCartman = SvgParser.parseFromResource(getResources(), R.drawable.cartman);
-
         mImageView = (ImageView) findViewById(R.id.iv_image);
+        mButton = (Button) findViewById(R.id.bt_button);
+
+        mSvg = SvgParser.parseFromResource(getResources(), R.drawable.cartman);
+
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -45,7 +51,7 @@ public class SvgDemoActivity extends AppCompatActivity {
     }
 
     private void reloadSvg() {
-        mSvgCartman.setOnElementListener(new OnSvgElementListener() {
+        mSvg.setOnElementListener(new OnSvgElementListener() {
             @Override
             public <T> T onSvgElement(String id, T element, Paint paint) {
                 if ("shirt".equals(id) || "hat".equals(id) || "pants".equals(id)) {
@@ -56,8 +62,21 @@ public class SvgDemoActivity extends AppCompatActivity {
                 return element;
             }
         });
-        BoundedPicture picture = mSvgCartman.getBoundedPicture();
-        mImageView.setImageDrawable(picture.createDrawable(mImageView));
+        BoundedPicture picture = mSvg.getBoundedPicture();
+
+        {
+            Drawable drawable = picture.createDrawable(mImageView);
+            mImageView.setImageDrawable(drawable);
+        }
+
+        {
+            Drawable drawable = picture.createDrawable(mButton);
+            drawable.setBounds(0, 0, 200, 200);
+            mButton.setCompoundDrawables(
+                    drawable,
+                    null, null, null);
+        }
+
         //mAttacher.update();
     }
 
