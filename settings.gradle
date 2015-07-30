@@ -1,1 +1,1 @@
-include ':library', ':svgdemo', ':svgwallpaper'
+include ':library', ':sample-imageview', ':sample-livewallpaper'
