@@ -4,7 +4,7 @@ import android.graphics.*;
 import android.view.animation.LinearInterpolator;
 
 import com.larvalabs.svgandroid.BoundedPicture;
-import com.larvalabs.svgandroid.SvgParser;
+import com.larvalabs.svgandroid.Sharp;
 
 import java.util.*;
 
@@ -160,7 +160,7 @@ public class AndroidDrawer {
         droidBounds = new RectF();
         droidCenter = new PointF();
         // Setup body clip
-        bodyClip = SvgParser.parsePath(BODY_CLIP);
+        bodyClip = Sharp.loadPath(BODY_CLIP);
         reverseTransform = new Matrix();
         workPaint = new Paint();
         workPaint.setAntiAlias(true);

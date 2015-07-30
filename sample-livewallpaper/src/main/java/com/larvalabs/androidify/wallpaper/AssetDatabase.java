@@ -4,7 +4,7 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 
 import com.larvalabs.svgandroid.BoundedPicture;
-import com.larvalabs.svgandroid.SvgParser;
+import com.larvalabs.svgandroid.Sharp;
 
 import java.io.IOException;
 import java.util.*;
@@ -173,10 +173,10 @@ public class AssetDatabase {
         file += ".svg";
         try {
             if (searchColor == null) {
-                return SvgParser.parseFromAsset(assetManager, file)
+                return Sharp.parseFromAsset(assetManager, file)
                         .getBoundedPicture();
             } else { 
-                return SvgParser.parseFromAsset(assetManager, file, searchColor, replaceColor)
+                return Sharp.parseFromAsset(assetManager, file, searchColor, replaceColor)
                         .getBoundedPicture();
             }
         } catch (IOException fne) {
@@ -218,10 +218,10 @@ public class AssetDatabase {
     public BoundedPicture getSVGForResource(int resource, Integer searchColor, Integer replaceColor) {
         try {
             if (searchColor == null) {
-                return SvgParser.parseFromResource(resources, resource)
+                return Sharp.loadResource(resources, resource)
                         .getBoundedPicture();
             } else {
-                return SvgParser.parseFromResource(resources, resource, searchColor, replaceColor)
+                return Sharp.loadResource(resources, resource, searchColor, replaceColor)
                         .getBoundedPicture();
             }
         } catch (Exception e) {

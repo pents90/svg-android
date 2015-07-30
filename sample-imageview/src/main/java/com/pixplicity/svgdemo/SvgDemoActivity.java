@@ -1,5 +1,6 @@
 package com.pixplicity.svgdemo;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
@@ -12,7 +13,7 @@ import android.widget.ImageView;
 
 import com.larvalabs.svgandroid.BoundedPicture;
 import com.larvalabs.svgandroid.OnSvgElementListener;
-import com.larvalabs.svgandroid.SvgParser;
+import com.larvalabs.svgandroid.Sharp;
 
 import java.util.Random;
 
@@ -24,7 +25,7 @@ public class SvgDemoActivity extends AppCompatActivity {
     private Button mButton;
 
     private PhotoViewAttacher mAttacher;
-    private SvgParser mSvg;
+    private Sharp mSvg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +38,11 @@ public class SvgDemoActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.iv_image);
         mButton = (Button) findViewById(R.id.bt_button);
 
-        mSvg = SvgParser.parseFromResource(getResources(), R.drawable.cartman);
+        Context context = this;
+        Sharp.loadResource(getResources(), R.drawable.cartman)
+             .into(mImageView);
+
+        mSvg = Sharp.loadResource(getResources(), R.drawable.cartman);
 
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
