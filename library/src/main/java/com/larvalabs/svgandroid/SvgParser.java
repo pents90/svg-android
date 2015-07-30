@@ -75,7 +75,6 @@ import javax.xml.parsers.SAXParserFactory;
     todo:
         inherit colors and other attributes from parent group
         split svg by layers to map<layerName. picture>
-        
  */
 
 /**
@@ -1488,7 +1487,6 @@ public class SvgParser {
                 matrix.postConcat(mMatrixStack.peek());
                 mMatrixStack.push(matrix);
             }
-
         }
 
         private void popTransform() {
@@ -1522,7 +1520,7 @@ public class SvgParser {
             }
             boolean forcedToHide = false;
             String id = getStringAttr("id", atts);
-//            Log.d("svgparser","id="+id);
+            //Log.d(TAG,"id="+id);
             if (id != null && mIdToColor != null) {
                 forcedToHide = mIdToColor.containsKey(id) && mIdToColor.get(id) == Color.TRANSPARENT;
             }
@@ -1556,11 +1554,11 @@ public class SvgParser {
                     Log.w(TAG, "element '" + localName + "' does not provide its dimensions; using " + width + "x" + height);
                 }
                 mBounds = new RectF(0, 0, width, height);
-                Log.d(TAG, "svg boundaries: " + mBounds);
+                //Log.d(TAG, "svg boundaries: " + mBounds);
                 mCanvas = mPicture.beginRecording(
                         (int) Math.ceil(mBounds.width()),
                         (int) Math.ceil(mBounds.height()));
-                Log.d(TAG, "canvas size: " + mCanvas.getWidth() + "x" + mCanvas.getHeight());
+                //Log.d(TAG, "canvas size: " + mCanvas.getWidth() + "x" + mCanvas.getHeight());
             } else if (localName.equals("defs")) {
                 // Ignore
                 mDefsReading = true;
@@ -1821,8 +1819,8 @@ public class SvgParser {
                     } else {
                         popTransform();
                     }
-//                // Clear gradient map
-//                gradientRefMap.clear();
+                    // Clear gradient map
+                    //gradientRefMap.clear();
                     popTransform();
                     mFillPaint = mFillPaintStack.pop();
                     mFillSet = mFillSetStack.pop();
@@ -1842,7 +1840,6 @@ public class SvgParser {
             private int vAlign = 0;
 
             public SvgText(Attributes atts) {
-                // Log.d(TAG, "text");
                 x = getFloatAttr("x", atts, 0f);
                 y = getFloatAttr("y", atts, 0f);
                 svgText = null;
@@ -1856,7 +1853,7 @@ public class SvgParser {
                     stroke = new Paint(mStrokePaint);
                     doText(atts, stroke);
                 }
-                // quick hack
+                // Quick hack for alignment
                 String valign = getStringAttr("alignment-baseline", atts);
                 if ("middle".equals(valign)) {
                     vAlign = MIDDLE;
@@ -1880,13 +1877,13 @@ public class SvgParser {
                     Paint paint = stroke == null ? fill : stroke;
                     Rect bnds = new Rect();
                     paint.getTextBounds(svgText, 0, svgText.length(), bnds);
-                    // Log.i(TAG, "Adjusting " + y + " by " + bnds);
+                    //Log.i(TAG, "Adjusting " + y + " by " + bnds);
                     y += (vAlign == MIDDLE) ? -bnds.centerY() : bnds.height();
                 }
             }
 
             public void render(Canvas canvas) {
-                // Log.i(TAG, "Drawing: " + svgText + " " + x + "," + y);
+                //Log.i(TAG, "Drawing: " + svgText + " " + x + "," + y);
                 if (svgText != null) {
                     if (fill != null) {
                         canvas.drawText(svgText, x, y, fill);
@@ -1932,7 +1929,7 @@ public class SvgParser {
                 }
             }
 
-            // Log.d(TAG, "typeface=" + result + " " + styleParam);
+            //Log.d(TAG, "typeface=" + result + " " + styleParam);
             return Typeface.create(face, styleParam);
         }
     }
