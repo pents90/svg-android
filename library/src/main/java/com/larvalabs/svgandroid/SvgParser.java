@@ -1514,8 +1514,11 @@ public abstract class SvgParser {
             paint.setShader(null);
             paint.setColor(c);
             Float opacity = atts.getFloat("opacity");
+            Float opacity2 = atts.getFloat(fillMode ? "fill-opacity" : "stroke-opacity");
             if (opacity == null) {
-                opacity = atts.getFloat(fillMode ? "fill-opacity" : "stroke-opacity");
+                opacity = opacity2;
+            } else if (opacity2 != null) {
+                opacity *= opacity2;
             }
             if (opacity == null) {
                 paint.setAlpha(255);
