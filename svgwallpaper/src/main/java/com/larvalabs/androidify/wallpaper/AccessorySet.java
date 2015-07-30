@@ -1,7 +1,8 @@
 package com.larvalabs.androidify.wallpaper;
 
 import android.graphics.Picture;
-import com.larvalabs.svgandroid.SVG;
+
+import com.larvalabs.svgandroid.BoundedPicture;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,9 +15,9 @@ import java.util.HashMap;
 public class AccessorySet {
 
     private HashMap<String,Accessory> accessories = new HashMap<String, Accessory>();
-    private HashMap<String, SVG> pictures = new HashMap<String, SVG>();
+    private HashMap<String, BoundedPicture> pictures = new HashMap<String, BoundedPicture>();
 
-    public void add(Accessory accessory, SVG svg) {
+    public void add(Accessory accessory, BoundedPicture svg) {
         accessories.put(accessory.getType(), accessory);
         pictures.put(accessory.getName(), svg);
     }
@@ -28,13 +29,13 @@ public class AccessorySet {
     public Picture getPictureForType(String type) {
         Accessory a = accessories.get(type);
         if (a != null) {
-            SVG svg = pictures.get(a.getName());
+            BoundedPicture svg = pictures.get(a.getName());
             return svg == null ? null : svg.getPicture();
         }
         return null;
     }
 
-    public SVG getSVGForType(String type) {
+    public BoundedPicture getSVGForType(String type) {
         Accessory a = accessories.get(type);
         if (a != null) {
             return pictures.get(a.getName());
@@ -71,4 +72,5 @@ public class AccessorySet {
         accessories.clear();
         pictures.clear();
     }
+
 }

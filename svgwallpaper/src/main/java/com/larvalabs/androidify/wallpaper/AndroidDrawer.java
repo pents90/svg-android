@@ -2,8 +2,9 @@ package com.larvalabs.androidify.wallpaper;
 
 import android.graphics.*;
 import android.view.animation.LinearInterpolator;
-import com.larvalabs.svgandroid.SVG;
-import com.larvalabs.svgandroid.SVGParser;
+
+import com.larvalabs.svgandroid.BoundedPicture;
+import com.larvalabs.svgandroid.SvgParser;
 
 import java.util.*;
 
@@ -159,7 +160,7 @@ public class AndroidDrawer {
         droidBounds = new RectF();
         droidCenter = new PointF();
         // Setup body clip
-        bodyClip = SVGParser.parsePath(BODY_CLIP);
+        bodyClip = SvgParser.parsePath(BODY_CLIP);
         reverseTransform = new Matrix();
         workPaint = new Paint();
         workPaint.setAntiAlias(true);
@@ -195,14 +196,14 @@ public class AndroidDrawer {
 
     /**
      * Convenience method to get a Picture object from an SVG.
-     * @param svg the parsed SVG.
-     * @return the picture, or null if svg was null.
+     * @param boundedPicture the parsed SVG.
+     * @return the picture, or null if boundedPicture was null.
      */
-    private static Picture getPicture(SVG svg) {
-        if (svg == null) {
+    private static Picture getPicture(BoundedPicture boundedPicture) {
+        if (boundedPicture == null) {
             return null;
         } else {
-            return svg.getPicture();
+            return boundedPicture.getPicture();
         }
     }
 
@@ -373,7 +374,7 @@ public class AndroidDrawer {
         // Compute height of droid
         float topHeight = Math.min(HEAD_BOUNDS_TOP, hairBounds.top);
         // Also consider a tall hat
-        SVG hat = accessories.getSVGForType(Accessory.TYPE_HEAD);
+        BoundedPicture hat = accessories.getSVGForType(Accessory.TYPE_HEAD);
         if (hat != null && hat.getLimits() != null) {
             topHeight = Math.min(topHeight, hat.getLimits().top);
         }

@@ -2,8 +2,9 @@ package com.larvalabs.androidify.wallpaper;
 
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import com.larvalabs.svgandroid.SVG;
-import com.larvalabs.svgandroid.SVGParser;
+
+import com.larvalabs.svgandroid.BoundedPicture;
+import com.larvalabs.svgandroid.SvgParser;
 
 import java.io.IOException;
 import java.util.*;
@@ -164,7 +165,7 @@ public class AssetDatabase {
      * @param replaceColor the replacement color.
      * @return the parsed SVG object.
      */
-    public SVG getSVGForAsset(String path, String name, String suffix, Integer searchColor, Integer replaceColor) {
+    public BoundedPicture getSVGForAsset(String path, String name, String suffix, Integer searchColor, Integer replaceColor) {
         String file = path + "/" + name;
         if (suffix != null) {
             file += "_" + suffix;
@@ -172,9 +173,11 @@ public class AssetDatabase {
         file += ".svg";
         try {
             if (searchColor == null) {
-                return SVGParser.getSVGFromAsset(assetManager, file);
+                return SvgParser.parseFromAsset(assetManager, file)
+                        .getBoundedPicture();
             } else { 
-                return SVGParser.getSVGFromAsset(assetManager, file, searchColor, replaceColor);
+                return SvgParser.parseFromAsset(assetManager, file, searchColor, replaceColor)
+                        .getBoundedPicture();
             }
         } catch (IOException fne) {
             // ignore, requested file is just not present or valid
@@ -192,7 +195,7 @@ public class AssetDatabase {
      * @param suffix the suffix, if necessary (ie. hair has _top and _back SVG layers).
      * @return the parsed SVG object.
      */
-    public SVG getSVGForAsset(String path, String name, String suffix) {
+    public BoundedPicture getSVGForAsset(String path, String name, String suffix) {
         return getSVGForAsset(path, name, suffix, null, null);
     }
 
@@ -201,7 +204,7 @@ public class AssetDatabase {
      * @param resource the resource ID.
      * @return the parsed SVG object.
      */
-    public SVG getSVGForResource(int resource) {
+    public BoundedPicture getSVGForResource(int resource) {
         return getSVGForResource(resource, null, null);
     }
 
@@ -212,12 +215,14 @@ public class AssetDatabase {
      * @param searchColor optionally a color to replace.
      * @param replaceColor the replacement color.
      */
-    public SVG getSVGForResource(int resource, Integer searchColor, Integer replaceColor) {
+    public BoundedPicture getSVGForResource(int resource, Integer searchColor, Integer replaceColor) {
         try {
             if (searchColor == null) {
-                return SVGParser.getSVGFromResource(resources, resource);
+                return SvgParser.parseFromResource(resources, resource)
+                        .getBoundedPicture();
             } else {
-                return SVGParser.getSVGFromResource(resources, resource, searchColor, replaceColor);
+                return SvgParser.parseFromResource(resources, resource, searchColor, replaceColor)
+                        .getBoundedPicture();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -237,7 +242,7 @@ public class AssetDatabase {
      * @param a the accessory.
      * @return the parsed SVG object.
      */
-    public SVG loadAccessory(Accessory a) {
+    public BoundedPicture loadAccessory(Accessory a) {
         return getSVGForAsset(ASSET_ACCESSORIES, a.getName(), a.getType());
     }
 
