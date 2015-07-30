@@ -26,6 +26,9 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -338,6 +341,47 @@ public abstract class SvgParser {
         };
     }
 
+    /**
+     * Parse SVG data from an input stream, replacing a single color with another color.
+     *
+     * @param imageFile  the input stream, with SVG XML data in UTF-8 character encoding.
+     * @return the parsed SVG.
+     * @throws SvgParseException if there is an error while parsing.
+     */
+    @SuppressWarnings("unused")
+    public static SvgParser parseFromFile(final File imageFile) throws SvgParseException {
+        return parseFromFile(imageFile, 0,0);
+    }
+
+
+    /**
+     * Parse SVG data from an input stream, replacing a single color with another color.
+     *
+     * @param imageFile  the input stream, with SVG XML data in UTF-8 character encoding.
+     * @param searchColor  the color in the SVG to replace.
+     * @param replaceColor the color with which to replace the search color.
+     * @return the parsed SVG.
+     * @throws SvgParseException if there is an error while parsing.
+     */
+    @SuppressWarnings("unused")
+    public static SvgParser parseFromFile(final File imageFile,
+                                          final int searchColor,
+                                          final int replaceColor) throws SvgParseException {
+        return new SvgParser(searchColor, replaceColor, false) {
+            private FileInputStream mFis;
+
+            protected InputStream getInputStream() throws FileNotFoundException {
+                mFis = new FileInputStream(imageFile);
+                return mFis;
+            }
+
+            @Override
+            protected void close(InputStream inputStream) throws IOException {
+                inputStream.close();
+                mFis.close();
+            }
+        };
+    }
     /**
      * Parse SVG data from a string.
      *
@@ -1733,8 +1777,6 @@ public abstract class SvgParser {
                         hiddenLevel = 1;
                         //Log.d(TAG, "Hidden up: " + hiddenLevel);
                     }
-                } else {
-                    pushTransform(atts);
                 }
                 pushTransform(atts);
 
@@ -1958,8 +2000,6 @@ public abstract class SvgParser {
                         if (hiddenLevel == 0) {
                             hidden = false;
                         }
-                    } else {
-                        popTransform();
                     }
                     // Clear gradient map
                     //gradientRefMap.clear();
