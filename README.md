@@ -11,7 +11,7 @@ https://github.com/josefpavlik/svg-android
 
 ## Sample
 
-[A sample](https://github.com/Pixplicity/svg-android/tree/master/svgandroid/svgdemo) is included in this repository.
+[A sample](https://github.com/Pixplicity/svg-android/tree/master/svgdemo) is included in this repository.
 
 It's easy to load an SVG:
 
