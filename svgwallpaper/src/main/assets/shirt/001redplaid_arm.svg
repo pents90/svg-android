@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 14.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 43363)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="content" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="500px" height="500px" viewBox="0 0 500 500" enable-background="new 0 0 500 500" xml:space="preserve">
+<g id="arm">
+	<path fill="#C82121" d="M102.028,174.734c-14.123,0-25.571,10.904-25.571,24.354v78.427h51.146V199.09
+		C127.601,185.638,116.151,174.734,102.028,174.734z"/>
+	<path fill="#962424" d="M79.308,187.913h45.438c-4.254-7.826-12.828-13.179-22.721-13.179
+		C92.134,174.734,83.561,180.087,79.308,187.913z"/>
+	<rect x="76.454" y="204.037" fill="#962424" width="51.146" height="13.729"/>
+	<rect x="76.454" y="233.91" fill="#962424" width="51.146" height="13.729"/>
+	<polygon fill="#962424" points="127.601,277.514 76.454,277.514 76.454,263.772 127.601,263.798 	"/>
+	<path fill="#D45353" d="M77.365,197.993l-0.029,79.521h14.082V177.333C83.391,181.187,77.787,188.946,77.365,197.993z"/>
+	<path fill="#D45353" d="M112.69,177.36v100.154h14.027V199.09C126.717,189.596,121.01,181.378,112.69,177.36z"/>
+	<polygon fill="#A33F3F" points="91.418,217.764 77.37,217.764 77.377,204.037 91.418,204.037 	"/>
+	<polygon fill="#A33F3F" points="91.418,247.638 77.353,247.638 77.36,233.91 91.418,233.91 	"/>
+	<polygon fill="#A33F3F" points="91.419,277.514 77.337,277.514 77.344,263.785 91.419,263.785 	"/>
+	<rect x="112.689" y="204.037" fill="#A33F3F" width="14.05" height="13.729"/>
+	<path fill="#A33F3F" d="M80.143,187.898l11.275,0.005v-10.57C86.584,179.64,82.635,183.353,80.143,187.898z"/>
+	<path fill="#A33F3F" d="M112.69,177.36v10.537l11.23,0.006C121.437,183.372,117.502,179.67,112.69,177.36z"/>
+	<rect x="112.689" y="233.91" fill="#A33F3F" width="14.05" height="13.729"/>
+	<rect x="112.689" y="263.785" fill="#A33F3F" width="14.05" height="13.729"/>
+	<ellipse fill="#FFFFFF" cx="82.823" cy="270.873" rx="2.345" ry="2.232"/>
+</g>
+<rect id="position" x="0" y="0" display="none" fill="none" stroke="#000000" width="504.5" height="500"/>
+</svg>
