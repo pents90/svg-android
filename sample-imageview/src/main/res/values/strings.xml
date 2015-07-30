@@ -4,4 +4,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="change_color">Change my color</string>
+
+    <string name="info_link">More open source from Pixplicity:\nhttp://github.com/Pixplicity</string>
+
 </resources>

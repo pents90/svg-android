@@ -18,6 +18,7 @@
         android:layout_height="wrap_content"
         android:background="#80000000"
         android:minHeight="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_launcher"
         app:theme="@style/ThemeOverlay.AppCompat.ActionBar"/>
 
     <Button
@@ -25,8 +26,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="48dp"
         android:drawablePadding="8dp"
         android:text="@string/change_color"/>
+
+    <TextView
+        android:id="@+id/tv_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:autoLink="web"
+        android:padding="8dp"
+        android:text="@string/info_link"/>
 
 </FrameLayout>
