@@ -21,6 +21,8 @@ It's easy to load an SVG:
          .into(mImageView);
 
 <img src="https://raw.githubusercontent.com/Pixplicity/sharp/master/sample-imageview/screenshots/cartman1.png" width="240" alt="Sample screenshot" />
+<img src="https://raw.githubusercontent.com/Pixplicity/sharp/master/sample-imageview/screenshots/cartman2.png" width="240" alt="Sample screenshot" />
+<img src="https://raw.githubusercontent.com/Pixplicity/sharp/master/sample-imageview/screenshots/cartman3.png" width="240" alt="Sample screenshot" />
 
 SVGs can be loaded from various sources:
 
