@@ -35,7 +35,11 @@ Sharp facilitates the application of the resulting drawable as well, through the
 - `getSharpPicture()` provides a wrapper containing a `Picture` and the SVG bounds and limits;
 - `getDrawable()` generates a `SharpDrawable`, which is a subclass of `PictureDrawable` that respects the `SharpPicture` boundaries.
 
-the optional View parameter simply takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
+It's recommended to use `into()` or `intoBackground()`, as the View parameter takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
+
+## Why isn't my SVG appearing?
+
+If you're setting your view's drawable manually, instead of using `into()` or `intoBackground()`, be sure to set the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
 
 ## Why no hardware acceleration?
 
