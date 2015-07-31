@@ -83,8 +83,21 @@ public class SharpPicture {
      * @param view {@link View} that will hold this drawable
      * @return the Drawable.
      */
+    public SharpDrawable createDrawable(@Nullable View view) {
+        mDrawable = null;
+        return getDrawable(view);
+    }
+
+    /**
+     * Get the drawable from the SVG. This drawable may be cached; if you want a new drawable, call
+     * {@link #createDrawable(View)}. A view may be provided so that it's LayerType is set to
+     * LAYER_TYPE_SOFTWARE.
+     *
+     * @param view {@link View} that will hold this drawable
+     * @return the Drawable.
+     */
     public SharpDrawable getDrawable(@Nullable View view) {
-        if (mDrawable == null) {
+        if (true || mDrawable == null) {
             mDrawable = new SharpDrawable(view, mPicture);
         } else {
             SharpDrawable.prepareView(view);

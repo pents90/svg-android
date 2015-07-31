@@ -65,21 +65,21 @@ public class SvgDemoActivity extends AppCompatActivity {
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                reloadSvg();
+                reloadSvg(true);
             }
         });
 
         mAttacher = new PhotoViewAttacher(mImageView);
         mAttacher.setMaximumScale(10f);
 
-        reloadSvg();
+        reloadSvg(false);
     }
 
-    private void reloadSvg() {
+    private void reloadSvg(final boolean changeColor) {
         mSvg.setOnElementListener(new OnSvgElementListener() {
             @Override
             public <T> T onSvgElement(String id, T element, Paint paint) {
-                if ("shirt".equals(id) || "hat".equals(id) || "pants".equals(id)) {
+                if (changeColor && ("shirt".equals(id) || "hat".equals(id) || "pants".equals(id))) {
                     Random random = new Random();
                     paint.setColor(Color.argb(255, random.nextInt(256),
                             random.nextInt(256), random.nextInt(256)));
@@ -90,12 +90,14 @@ public class SvgDemoActivity extends AppCompatActivity {
         SharpPicture picture = mSvg.getSharpPicture();
 
         {
-            Drawable drawable = picture.getDrawable(mImageView);
+            Drawable drawable = picture.createDrawable(mImageView);
             mImageView.setImageDrawable(drawable);
         }
 
         {
-            Drawable drawable = picture.getDrawable(mButton);
+            // We don't want to use the same drawable, as we're specifying a custom size; therefore
+            // we call createDrawable() instead of getDrawable()
+            Drawable drawable = picture.createDrawable(mButton);
             int iconSize = getResources().getDimensionPixelSize(R.dimen.icon_size);
             drawable.setBounds(0, 0, iconSize, iconSize);
             mButton.setCompoundDrawables(
