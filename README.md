@@ -20,6 +20,8 @@ It's easy to load an SVG:
     Sharp.loadResource(getResources(), R.drawable.cartman)
          .into(mImageView);
 
+<img src="https://raw.githubusercontent.com/Pixplicity/sharp/master/sample-imageview/screenshots/cartman1.png" width="240" alt="Sample screenshot" />
+
 SVGs can be loaded from various sources:
 
 - `loadAsset(AssetManager, String)` loads SVG data from an Android application asset;
