@@ -1,6 +1,8 @@
 Sharp
 ===========
 
+Sharp is a Scalable Vector Graphics (SVG) implementation for Android. It facilitates loading vector graphics as SharpDrawables, and can effectively be used wherever a conventional image would be displayed, whether it be as a background, ImageView source, inside a StateListDrawable or used as composites in a TextView.
+
 Forked from:  
 https://github.com/pents90/svg-android
 
@@ -15,11 +17,29 @@ https://github.com/josefpavlik/svg-android
 
 It's easy to load an SVG:
 
-    BoundedPicture picture = SvgParser.parseFromResource(getResources(), R.drawable.cartman)
-                                      .getBoundedPicture();
-    mImageView.setImageDrawable(picture.createDrawable(mImageView));
+    Sharp.loadResource(getResources(), R.drawable.cartman)
+         .into(mImageView);
 
-You do not necessarily need to provide the view into `BoundedPicture.createDrawable()`; the optional View parameter simply takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
+SVGs can be loaded from various sources:
+
+- `loadAsset(AssetManager, String)` loads SVG data from an Android application asset;
+- `loadResource(Resources, int)` loads SVG data from an Android application resource;
+- `loadString(String)` loads SVG data directly from a String;
+- `loadInputStream(InputStream)` loads SVG data from an InputStream (but it's your responsibility to close it afterwards);
+- `loadFile(File)` loads SVG data from a File, internally opening and closing a FileInputStream to do so.
+
+Sharp facilitates the application of the resulting drawable as well, through the following methods:
+
+- `into(ImageView)` takes care of loading the SVG into the source of the ImageView, or falling back to setting the background if the view is not an ImageView;
+- `intoBackground(View)` takes care of loading the SVG into the View's background;
+- `getSharpPicture()` provides a wrapper containing a `Picture` and the SVG bounds and limits;
+- `getDrawable()` generates a `SharpDrawable`, which is a subclass of `PictureDrawable` that respects the `SharpPicture` boundaries.
+
+It's recommended to use `into()` or `intoBackground()`, as the View parameter takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
+
+## Why isn't my SVG appearing?
+
+If you're setting your view's drawable manually, instead of using `into()` or `intoBackground()`, be sure to set the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
 
 ## Why no hardware acceleration?
 
