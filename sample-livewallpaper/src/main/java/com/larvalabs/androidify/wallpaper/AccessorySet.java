@@ -2,7 +2,7 @@ package com.larvalabs.androidify.wallpaper;
 
 import android.graphics.Picture;
 
-import com.larvalabs.svgandroid.BoundedPicture;
+import com.pixplicity.sharp.SharpPicture;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,10 +14,10 @@ import java.util.HashMap;
  */
 public class AccessorySet {
 
-    private HashMap<String,Accessory> accessories = new HashMap<String, Accessory>();
-    private HashMap<String, BoundedPicture> pictures = new HashMap<String, BoundedPicture>();
+    private HashMap<String, Accessory> accessories = new HashMap<String, Accessory>();
+    private HashMap<String, SharpPicture> pictures = new HashMap<>();
 
-    public void add(Accessory accessory, BoundedPicture svg) {
+    public void add(Accessory accessory, SharpPicture svg) {
         accessories.put(accessory.getType(), accessory);
         pictures.put(accessory.getName(), svg);
     }
@@ -29,13 +29,13 @@ public class AccessorySet {
     public Picture getPictureForType(String type) {
         Accessory a = accessories.get(type);
         if (a != null) {
-            BoundedPicture svg = pictures.get(a.getName());
+            SharpPicture svg = pictures.get(a.getName());
             return svg == null ? null : svg.getPicture();
         }
         return null;
     }
 
-    public BoundedPicture getSVGForType(String type) {
+    public SharpPicture getSVGForType(String type) {
         Accessory a = accessories.get(type);
         if (a != null) {
             return pictures.get(a.getName());
@@ -44,19 +44,19 @@ public class AccessorySet {
     }
 
     public int getAccessoryCount() {
-    	return accessories.size();
+        return accessories.size();
     }
-    
+
     public int[] getIndexArray() {
-    	int[] idxArray  = new int[getAccessoryCount()];
-    	int i=0;
-    	for(Accessory accessory: accessories.values()) {
-    		idxArray[i] = accessory.getIndex();
-    		i++;
-    	}
-    	return idxArray;
+        int[] idxArray = new int[getAccessoryCount()];
+        int i = 0;
+        for (Accessory accessory : accessories.values()) {
+            idxArray[i] = accessory.getIndex();
+            i++;
+        }
+        return idxArray;
     }
-    
+
     public Collection<Accessory> getAllAccessories() {
         return accessories.values();
     }

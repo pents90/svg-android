@@ -3,8 +3,9 @@ package com.larvalabs.androidify.wallpaper;
 import android.graphics.*;
 import android.view.animation.LinearInterpolator;
 
-import com.larvalabs.svgandroid.BoundedPicture;
-import com.larvalabs.svgandroid.Sharp;
+
+import com.pixplicity.sharp.Sharp;
+import com.pixplicity.sharp.SharpPicture;
 
 import java.util.*;
 
@@ -196,14 +197,14 @@ public class AndroidDrawer {
 
     /**
      * Convenience method to get a Picture object from an SVG.
-     * @param boundedPicture the parsed SVG.
-     * @return the picture, or null if boundedPicture was null.
+     * @param sharpPicture the parsed SVG.
+     * @return the picture, or null if SharpPicture was null.
      */
-    private static Picture getPicture(BoundedPicture boundedPicture) {
-        if (boundedPicture == null) {
+    private static Picture getPicture(SharpPicture sharpPicture) {
+        if (sharpPicture == null) {
             return null;
         } else {
-            return boundedPicture.getPicture();
+            return sharpPicture.getPicture();
         }
     }
 
@@ -263,7 +264,7 @@ public class AndroidDrawer {
             beard = null;
         }
         accessories.clear();
-        HashSet<String> accessoryNames = new HashSet<String>(config.getAllAccessories());
+        HashSet<String> accessoryNames = new HashSet<>(config.getAllAccessories());
         final List<Accessory> accessoryAssets = db.getAccessoryAssets();
         for (Accessory accessory : accessoryAssets) {
             if (accessoryNames.contains(accessory.getName())) {
@@ -374,7 +375,7 @@ public class AndroidDrawer {
         // Compute height of droid
         float topHeight = Math.min(HEAD_BOUNDS_TOP, hairBounds.top);
         // Also consider a tall hat
-        BoundedPicture hat = accessories.getSVGForType(Accessory.TYPE_HEAD);
+        SharpPicture hat = accessories.getSVGForType(Accessory.TYPE_HEAD);
         if (hat != null && hat.getLimits() != null) {
             topHeight = Math.min(topHeight, hat.getLimits().top);
         }

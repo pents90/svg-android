@@ -45,4 +45,4 @@ If you're setting your view's drawable manually, instead of using `into()` or `i
 
 Excellent question! Aside from the fact that PictureDrawable doesn't render correctly, paths do not efficiently render in hardware acceleration. Even if it worked, it would have poor performance. [Read this excellent discussion](http://stackoverflow.com/questions/15039829/drawing-paths-and-hardware-acceleration) about why this is, if you're interested.
 
-You don't need to disable hardware acceleration on your entire application. Only *individual views* need to have the layer type changed, and providing your view into `BoundedPicture.createDrawable()` takes care of this for you.
+You don't need to disable hardware acceleration on your entire application. Only *individual views* need to have the layer type changed, and providing your view into `SharpPicture.createDrawable()` takes care of this for you.
