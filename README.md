@@ -1,5 +1,7 @@
-svg-android
+Sharp
 ===========
+
+Sharp is a Scalable Vector Graphics (SVG) implementation for Android. It facilitates loading vector graphics as Drawables, and can effectively be used wherever a conventional image would be displayed, whether it be as a background, ImageView source, inside a StateListDrawable or used as composites in a TextView.
 
 Forked from:  
 https://github.com/pents90/svg-android
