@@ -48,6 +48,10 @@ public class SharpDrawable extends PictureDrawable {
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public SharpDrawable(@Nullable View view, Picture picture) {
         super(picture);
+        prepareView(view);
+    }
+
+    static void prepareView(@Nullable View view) {
         if (view != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }

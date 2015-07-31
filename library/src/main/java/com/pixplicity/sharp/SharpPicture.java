@@ -25,7 +25,6 @@ package com.pixplicity.sharp;
 
 import android.graphics.Picture;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.view.View;
 
@@ -37,7 +36,7 @@ import android.view.View;
 public class SharpPicture {
 
     /**
-     * The parsed Picture object.
+     * The parsed Picture.
      */
     private Picture mPicture;
 
@@ -51,6 +50,11 @@ public class SharpPicture {
      * Note that this could be null if there was a failure to compute limits (ie. an empty SVG).
      */
     private RectF mLimits = null;
+
+    /**
+     * A cached {@link SharpDrawable} that contains the Picture.
+     */
+    private SharpDrawable mDrawable;
 
     /**
      * Construct a new SVG.
@@ -79,8 +83,13 @@ public class SharpPicture {
      * @param view {@link View} that will hold this drawable
      * @return the Drawable.
      */
-    public Drawable createDrawable(@Nullable View view) {
-        return new SharpDrawable(view, mPicture);
+    public SharpDrawable getDrawable(@Nullable View view) {
+        if (mDrawable == null) {
+            mDrawable = new SharpDrawable(view, mPicture);
+        } else {
+            SharpDrawable.prepareView(view);
+        }
+        return mDrawable;
     }
 
     /**

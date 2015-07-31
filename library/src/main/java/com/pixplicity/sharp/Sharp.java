@@ -224,7 +224,7 @@ public abstract class Sharp {
     }
 
     /**
-     * Parse SVG data from an input stream, replacing a single color with another color.
+     * Parse SVG data from a file.
      *
      * @param imageFile the input stream, with SVG XML data in UTF-8 character encoding.
      * @return the parsed SVG.
@@ -325,6 +325,7 @@ public abstract class Sharp {
 
     protected abstract void close(InputStream inputStream) throws IOException;
 
+    @SuppressWarnings("unused")
     public void into(View view) {
         if (view instanceof ImageView) {
             ((ImageView) view).setImageDrawable(getDrawable(view));
@@ -333,7 +334,7 @@ public abstract class Sharp {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("unused, deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void intoBackground(View view) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
@@ -343,11 +344,13 @@ public abstract class Sharp {
         }
     }
 
-    private Drawable getDrawable(View view) {
+    @SuppressWarnings("unused")
+    public SharpDrawable getDrawable(View view) {
         // FIXME this runs on the main thread and may be slow
-        return getSharpPicture().createDrawable(view);
+        return getSharpPicture().getDrawable(view);
     }
 
+    @SuppressWarnings("unused")
     public SharpPicture getSharpPicture() {
         InputStream inputStream = null;
         try {

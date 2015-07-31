@@ -23,7 +23,6 @@
 
 package com.pixplicity.sharp.imageviewdemo;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
@@ -91,12 +90,12 @@ public class SvgDemoActivity extends AppCompatActivity {
         SharpPicture picture = mSvg.getSharpPicture();
 
         {
-            Drawable drawable = picture.createDrawable(mImageView);
+            Drawable drawable = picture.getDrawable(mImageView);
             mImageView.setImageDrawable(drawable);
         }
 
         {
-            Drawable drawable = picture.createDrawable(mButton);
+            Drawable drawable = picture.getDrawable(mButton);
             int iconSize = getResources().getDimensionPixelSize(R.dimen.icon_size);
             drawable.setBounds(0, 0, iconSize, iconSize);
             mButton.setCompoundDrawables(
