@@ -1,4 +1,27 @@
-package com.larvalabs.svgandroid;
+/*
+    Copyright 2011, 2015 Pixplicity, Larva Labs LLC and Google, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+    Sharp is heavily based on prior work. It was originally forked from
+        https://github.com/pents90/svg-android
+    And changes from other forks have been consolidated:
+        https://github.com/b2renger/svg-android
+        https://github.com/mindon/svg-android
+        https://github.com/josefpavlik/svg-android
+ */
+
+package com.pixplicity.sharp;
 
 import android.graphics.Picture;
 import android.graphics.RectF;
@@ -6,45 +29,28 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.view.View;
 
-/*
-   Licensed to the Apache Software Foundation (ASF) under one or more
-   contributor license agreements.  See the NOTICE file distributed with
-   this work for additional information regarding copyright ownership.
-   The ASF licenses this file to You under the Apache License, Version 2.0
-   (the "License"); you may not use this file except in compliance with
-   the License.  You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
- */
-
 /**
  * Describes a vector Picture object, and optionally its bounds.
  *
  * @author Larva Labs, LLC
  */
-public class BoundedPicture {
+public class SharpPicture {
 
     /**
      * The parsed Picture object.
      */
-    private Picture picture;
+    private Picture mPicture;
 
     /**
      * These are the bounds for the SVG specified as a hidden "bounds" layer in the SVG.
      */
-    private RectF bounds;
+    private RectF mBounds;
 
     /**
      * These are the estimated bounds of the SVG computed from the SVG elements while parsing.
      * Note that this could be null if there was a failure to compute limits (ie. an empty SVG).
      */
-    private RectF limits = null;
+    private RectF mLimits = null;
 
     /**
      * Construct a new SVG.
@@ -52,9 +58,9 @@ public class BoundedPicture {
      * @param picture the parsed picture object.
      * @param bounds  the bounds computed from the "bounds" layer in the SVG.
      */
-    BoundedPicture(Picture picture, RectF bounds) {
-        this.picture = picture;
-        this.bounds = bounds;
+    SharpPicture(Picture picture, RectF bounds) {
+        mPicture = picture;
+        mBounds = bounds;
     }
 
     /**
@@ -63,7 +69,7 @@ public class BoundedPicture {
      * @param limits the bounds computed while parsing the SVG, may not be entirely accurate.
      */
     void setLimits(RectF limits) {
-        this.limits = limits;
+        mLimits = limits;
     }
 
     /**
@@ -74,7 +80,7 @@ public class BoundedPicture {
      * @return the Drawable.
      */
     public Drawable createDrawable(@Nullable View view) {
-        return new SvgDrawable(view, picture);
+        return new SharpDrawable(view, mPicture);
     }
 
     /**
@@ -83,7 +89,7 @@ public class BoundedPicture {
      * @return the picture.
      */
     public Picture getPicture() {
-        return picture;
+        return mPicture;
     }
 
     /**
@@ -92,7 +98,7 @@ public class BoundedPicture {
      * @return rectangle representing the bounds.
      */
     public RectF getBounds() {
-        return bounds;
+        return mBounds;
     }
 
     /**
@@ -101,7 +107,7 @@ public class BoundedPicture {
      * @return rectangle representing the computed bounds.
      */
     public RectF getLimits() {
-        return limits;
+        return mLimits;
     }
 
 }

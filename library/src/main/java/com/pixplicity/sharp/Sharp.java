@@ -1,4 +1,27 @@
-package com.larvalabs.svgandroid;
+/*
+    Copyright 2011, 2015 Pixplicity, Larva Labs LLC and Google, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+    Sharp is heavily based on prior work. It was originally forked from
+        https://github.com/pents90/svg-android
+    And changes from other forks have been consolidated:
+        https://github.com/b2renger/svg-android
+        https://github.com/mindon/svg-android
+        https://github.com/josefpavlik/svg-android
+ */
+
+package com.pixplicity.sharp;
 
 import android.annotation.TargetApi;
 import android.content.res.AssetManager;
@@ -45,46 +68,6 @@ import java.util.zip.GZIPInputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-/*
-   Licensed to the Apache Software Foundation (ASF) under one or more
-   contributor license agreements.  See the NOTICE file distributed with
-   this work for additional information regarding copyright ownership.
-   The ASF licenses this file to You under the Apache License, Version 2.0
-   (the "License"); you may not use this file except in compliance with
-   the License.  You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-    History:
-        original version from https://github.com/pents90/svg-android.git
-        forked 2012-11-20 by Josef Pavlik josef@pavlik.it
-        current git:
-        git@github.com:josefpavlik/svg-android.git
-        
-    changelog:
-        2012-11-20 multiple color and visibility changing, bugfixes 
-        2012-12-17 path command ARCTO implemented (function drawarc)
-        2012-12-20 gradient support for attr 'gradientUnits' and 'spreadMethod' 
-        2012-12-20 content bounding-box check enhanced 
-        2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
-        2012-12-27 default color bug fixed, history added
-        2013-01-03 gradient forward reference allowed
-        2013-01-03 float number parse bug fixed
-        2013-01-03 rounded rectangle supported
-        2013-01-03 named color handling enhanced, (thanks to Stephen Uhler, http://code.google.com/p/svg-android-2)
-        2013-01-03 zipped svg supported - autodetect, only if stream is seekable, works with svg in resources
-        
-    todo:
-        inherit colors and other attributes from parent group
-        split svg by layers to map<layerName. picture>
- */
 
 /**
  * Entry point for parsing SVG files for Android.
@@ -328,10 +311,10 @@ public abstract class Sharp {
 
     private Drawable getDrawable(View view) {
         // FIXME this runs on the main thread and may be slow
-        return getBoundedPicture().createDrawable(view);
+        return getSharpPicture().createDrawable(view);
     }
 
-    public BoundedPicture getBoundedPicture() {
+    public SharpPicture getSharpPicture() {
         InputStream inputStream = null;
         try {
             inputStream = getInputStream();
@@ -345,7 +328,7 @@ public abstract class Sharp {
                 throw new SvgParseException(e);
             }
         }
-        BoundedPicture result = new BoundedPicture(mSvgHandler.mPicture, mSvgHandler.mBounds);
+        SharpPicture result = new SharpPicture(mSvgHandler.mPicture, mSvgHandler.mBounds);
         // Skip bounds if it was an empty pic
         if (!Float.isInfinite(mSvgHandler.mLimits.top)) {
             result.setLimits(mSvgHandler.mLimits);
