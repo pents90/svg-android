@@ -61,10 +61,6 @@ public class SvgDemoActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.iv_image);
         mButton = (Button) findViewById(R.id.bt_button);
 
-        Context context = this;
-        Sharp.loadResource(getResources(), R.drawable.cartman)
-             .into(mImageView);
-
         mSvg = Sharp.loadResource(getResources(), R.drawable.cartman);
 
         mButton.setOnClickListener(new View.OnClickListener() {
