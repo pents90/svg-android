@@ -282,9 +282,43 @@ public abstract class Sharp {
         return this;
     }
 
+    public int getReplacementColor(int color) {
+        if (mSearchColor != null && mSearchColor == color) {
+            return mReplaceColor;
+        }
+        return color;
+    }
+
+    public int getColorForId(String id, int color) {
+        if (mIdToColor != null) {
+            if (id.length() != 0 && mIdToColor.containsKey(id)) {
+                color = mIdToColor.get(id);
+            }
+        }
+        return color;
+    }
+
+    /**
+     * Sets all stroke and fill colors to white.
+     *
+     * @param whiteMode
+     * @return
+     * @deprecated This method will be removed in a future release. It's recommended to register an
+     * {@link OnSvgElementListener} to modify the paint.
+     */
+    @Deprecated
     public Sharp setWhiteMode(boolean whiteMode) {
         mWhiteMode = whiteMode;
         return this;
+    }
+
+    /**
+     * @return
+     * @deprecated See notes in {@link #setWhiteMode(boolean)}.
+     */
+    @Deprecated
+    public boolean isWhiteMode() {
+        return mWhiteMode;
     }
 
     protected abstract InputStream getInputStream() throws IOException;
@@ -888,26 +922,6 @@ public abstract class Sharp {
         }
     }
 
-    public boolean isWhiteMode() {
-        return mWhiteMode;
-    }
-
-    public int getReplacementColor(int color) {
-        if (mSearchColor != null && mSearchColor == color) {
-            return mReplaceColor;
-        }
-        return color;
-    }
-
-    public int getColorForId(String id, int color) {
-        if (mIdToColor != null) {
-            if (id.length() != 0 && mIdToColor.containsKey(id)) {
-                color = mIdToColor.get(id);
-            }
-        }
-        return color;
-    }
-
     private <T> T onSvgElement(String id, T p, Paint paint) {
         if (mOnElementListener != null) {
             return mOnElementListener.onSvgElement(id, p, paint);
@@ -1098,6 +1112,7 @@ public abstract class Sharp {
         private Stack<Paint> mFillPaintStack = new Stack<>();
         private Stack<Boolean> mFillSetStack = new Stack<>();
         // Scratch rect (so we aren't constantly making new ones)
+        private Line mLine = new Line();
         private RectF mRect = new RectF();
         private RectF mBounds = null;
         private RectF mLimits = new RectF(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
@@ -1656,11 +1671,17 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 mRect.set(x, y, x + width, y + height);
                 if (doFill(props, mRect)) {
-                    mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                    mRect = onSvgElement(id, mRect, mFillPaint);
+                    if (mRect != null) {
+                        mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                    }
                     doLimits(mRect);
                 }
                 if (doStroke(props)) {
-                    mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                    mRect = onSvgElement(id, mRect, mFillPaint);
+                    if (mRect != null) {
+                        mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                    }
                     doLimits(mRect, mFillPaint);
                 }
                 popTransform();
@@ -1672,8 +1693,12 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 if (doStroke(props)) {
                     pushTransform(atts);
-                    mRect.set(x1, y1, x2, y2);
-                    mCanvas.drawLine(x1, y1, x2, y2, mStrokePaint);
+                    mLine.set(x1, y1, x2, y2);
+                    mRect.set(mLine);
+                    mLine = onSvgElement(id, mLine, mFillPaint);
+                    if (mLine != null) {
+                        mCanvas.drawLine(mLine.left, mLine.top, mLine.right, mLine.bottom, mStrokePaint);
+                    }
                     doLimits(mRect, mStrokePaint);
                     popTransform();
                 }
@@ -1694,11 +1719,17 @@ public abstract class Sharp {
                     Properties props = new Properties(atts);
                     mRect.set(centerX - radiusX, centerY - radiusY, centerX + radiusX, centerY + radiusY);
                     if (doFill(props, mRect)) {
-                        mCanvas.drawOval(mRect, mFillPaint);
+                        mRect = onSvgElement(id, mRect, mFillPaint);
+                        if (mRect != null) {
+                            mCanvas.drawOval(mRect, mFillPaint);
+                        }
                         doLimits(mRect);
                     }
                     if (doStroke(props)) {
-                        mCanvas.drawOval(mRect, mStrokePaint);
+                        mRect = onSvgElement(id, mRect, mFillPaint);
+                        if (mRect != null) {
+                            mCanvas.drawOval(mRect, mStrokePaint);
+                        }
                         doLimits(mRect, mStrokePaint);
                     }
                     popTransform();
@@ -1723,11 +1754,17 @@ public abstract class Sharp {
                         }
                         p.computeBounds(mRect, false);
                         if (doFill(props, mRect)) {
-                            mCanvas.drawPath(p, mFillPaint);
+                            p = onSvgElement(id, p, mFillPaint);
+                            if (p != null) {
+                                mCanvas.drawPath(p, mFillPaint);
+                            }
                             doLimits(mRect);
                         }
                         if (doStroke(props)) {
-                            mCanvas.drawPath(p, mStrokePaint);
+                            p = onSvgElement(id, p, mFillPaint);
+                            if (p != null) {
+                                mCanvas.drawPath(p, mStrokePaint);
+                            }
                             doLimits(mRect, mStrokePaint);
                         }
                         popTransform();
@@ -1757,12 +1794,16 @@ public abstract class Sharp {
                 p.computeBounds(mRect, false);
                 if (doFill(props, mRect)) {
                     p = onSvgElement(id, p, mFillPaint);
-                    mCanvas.drawPath(p, mFillPaint);
+                    if (p != null) {
+                        mCanvas.drawPath(p, mFillPaint);
+                    }
                     doLimits(mRect);
                 }
                 if (doStroke(props)) {
                     p = onSvgElement(id, p, mStrokePaint);
-                    mCanvas.drawPath(p, mStrokePaint);
+                    if (p != null) {
+                        mCanvas.drawPath(p, mStrokePaint);
+                    }
                     doLimits(mRect, mStrokePaint);
                 }
                 popTransform();
@@ -1803,7 +1844,10 @@ public abstract class Sharp {
                 case "tspan":
                     if (!mTextStack.isEmpty()) {
                         SvgText text = mTextStack.pop();
-                        text.render(mCanvas);
+                        text = onSvgElement(text.id, text, mFillPaint);
+                        if (text != null) {
+                            text.render(mCanvas);
+                        }
                     }
                     if (localName.equals("text")) {
                         popTransform();
@@ -1842,16 +1886,22 @@ public abstract class Sharp {
             }
         }
 
-        // class to hold text properties
+        /**
+         * Holds text properties as these are only applied with the end tag is encountered.
+         */
         private class SvgText {
+
             private final static int MIDDLE = 1;
             private final static int TOP = 2;
+
+            private final String id;
             private Paint stroke = null, fill = null;
             private float x, y;
             private String svgText;
             private int vAlign = 0;
 
             public SvgText(Attributes atts) {
+                id = getStringAttr("id", atts);
                 x = getFloatAttr("x", atts, 0f);
                 y = getFloatAttr("y", atts, 0f);
                 svgText = null;
