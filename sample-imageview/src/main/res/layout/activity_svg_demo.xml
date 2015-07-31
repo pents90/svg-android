@@ -18,7 +18,7 @@
         android:layout_height="wrap_content"
         android:background="#80000000"
         android:minHeight="?attr/actionBarSize"
-        app:navigationIcon="@drawable/ic_launcher"
+        app:navigationIcon="@mipmap/ic_launcher"
         app:theme="@style/ThemeOverlay.AppCompat.ActionBar"/>
 
     <Button
