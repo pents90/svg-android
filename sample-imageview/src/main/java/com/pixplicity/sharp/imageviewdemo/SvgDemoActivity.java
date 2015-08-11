@@ -33,9 +33,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
-import com.pixplicity.sharp.SharpPicture;
 import com.pixplicity.sharp.OnSvgElementListener;
 import com.pixplicity.sharp.Sharp;
+import com.pixplicity.sharp.SharpPicture;
 
 import java.util.Random;
 
@@ -61,6 +61,8 @@ public class SvgDemoActivity extends AppCompatActivity {
         mButton = (Button) findViewById(R.id.bt_button);
 
         mSvg = Sharp.loadResource(getResources(), R.drawable.cartman);
+        // If you want to load typefaces from assets:
+        //          .withAssets(getAssets());
 
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
