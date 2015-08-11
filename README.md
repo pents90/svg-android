@@ -50,3 +50,8 @@ If you're setting your view's drawable manually, instead of using `into()` or `i
 Excellent question! Aside from the fact that PictureDrawable doesn't render correctly, paths do not efficiently render in hardware acceleration. Even if it worked, it would have poor performance. [Read this excellent discussion](http://stackoverflow.com/questions/15039829/drawing-paths-and-hardware-acceleration) about why this is, if you're interested.
 
 You don't need to disable hardware acceleration on your entire application. Only *individual views* need to have the layer type changed, and providing your view into `SharpPicture.createDrawable()` takes care of this for you.
+
+## Known issues
+
+1. Group opacity is not applied. In order to allow this to work correctly, the entire group would need to be drawn in a separate picture and applied as a whole. As this would have a significant performance hit, we want to avoid having to do this and are open to alternative suggestions.
+2. Text size and position isn't accurate. Until we can get this sorted out, convert your text to paths if you want it to appear pixel-perfect.
