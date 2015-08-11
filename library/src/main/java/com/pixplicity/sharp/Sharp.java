@@ -41,7 +41,6 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Shader.TileMode;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.Log;
 import android.view.View;
@@ -63,6 +62,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -84,9 +85,11 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public abstract class Sharp {
 
-    static final String TAG = "SVGAndroid";
+    static final String TAG = Sharp.class.getSimpleName();
 
     private static String sAssumedUnit;
+    private static float sDensity = 1.0f;
+    private static HashMap<String, String> sTextDynamic = null;
 
     private final SvgHandler mSvgHandler;
 
@@ -98,6 +101,7 @@ public abstract class Sharp {
     private boolean mWhiteMode = false;
 
     private OnSvgElementListener mOnElementListener;
+    private AssetManager mAssetManager;
 
     enum Unit {
         PERCENT("%"),
@@ -127,11 +131,6 @@ public abstract class Sharp {
         }
     }
 
-    public static float sDensity = 1.0f;
-    public static AssetManager sAssets = null;
-
-    static HashMap<String, String> sTextDynamic = null;
-
     @SuppressWarnings("unused")
     public static void prepareTexts(HashMap<String, String> texts) {
         sTextDynamic = texts;
@@ -145,7 +144,8 @@ public abstract class Sharp {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadInputStream(final InputStream svgData) throws SvgParseException {
+    public static Sharp loadInputStream(final InputStream svgData)
+            throws SvgParseException {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return svgData;
@@ -165,7 +165,8 @@ public abstract class Sharp {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadString(final String svgData) throws SvgParseException {
+    public static Sharp loadString(final String svgData)
+            throws SvgParseException {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return new ByteArrayInputStream(svgData.getBytes());
@@ -186,7 +187,9 @@ public abstract class Sharp {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadResource(final Resources resources, final int resId) throws SvgParseException {
+    public static Sharp loadResource(final Resources resources,
+                                     final int resId)
+            throws SvgParseException {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return resources.openRawResource(resId);
@@ -212,13 +215,13 @@ public abstract class Sharp {
                                   final String svgPath)
             throws SvgParseException, IOException {
         return new Sharp() {
-            protected InputStream getInputStream() throws IOException {
-                return assetMngr.open(svgPath);
-            }
-
             @Override
             protected void close(InputStream inputStream) throws IOException {
                 inputStream.close();
+            }
+
+            protected InputStream getInputStream() throws IOException {
+                return assetMngr.open(svgPath);
             }
         };
     }
@@ -231,7 +234,8 @@ public abstract class Sharp {
      * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadFile(final File imageFile) throws SvgParseException {
+    public static Sharp loadFile(final File imageFile)
+            throws SvgParseException {
         return new Sharp() {
             private FileInputStream mFis;
 
@@ -264,6 +268,10 @@ public abstract class Sharp {
         sAssumedUnit = null;
         final Picture picture = new Picture();
         mSvgHandler = new SvgHandler(this, picture);
+    }
+
+    private AssetManager getAssetManager() {
+        return mAssetManager;
     }
 
     public Sharp setOnElementListener(OnSvgElementListener onElementListener) {
@@ -324,6 +332,12 @@ public abstract class Sharp {
     protected abstract InputStream getInputStream() throws IOException;
 
     protected abstract void close(InputStream inputStream) throws IOException;
+
+    @SuppressWarnings("unused")
+    public Sharp withAssets(AssetManager assetManager) {
+        mAssetManager = assetManager;
+        return this;
+    }
 
     @SuppressWarnings("unused")
     public void into(View view) {
@@ -1272,15 +1286,18 @@ public abstract class Sharp {
             }
         }
 
-        // XXX not done yet
-        private boolean doText(Attributes atts, Paint paint) {
+        private boolean doText(Attributes atts, Properties props, Paint paint) {
             if ("none".equals(atts.getValue("display"))) {
                 return false;
             }
-            if (atts.getValue("font-size") != null) {
-                paint.setTextSize(getFloatAttr("font-size", atts, 10f));
+            Float fontSize = getFloatAttr("font-size", atts);
+            if (fontSize == null) {
+                fontSize = parseFloat(props.getString("font-size"), null);
             }
-            Typeface typeface = setTypeFace(atts);
+            if (fontSize != null) {
+                paint.setTextSize(fontSize);
+            }
+            Typeface typeface = setTypeface(atts, props, mSharp.getAssetManager(), paint.getTypeface());
             if (typeface != null) {
                 paint.setTypeface(typeface);
             }
@@ -1637,8 +1654,7 @@ public abstract class Sharp {
                 mFillSetStack.push(mFillSet);
                 mStrokeSetStack.push(mStrokeSet);
 
-                doText(atts, mFillPaint);
-                doText(atts, mStrokePaint);
+                mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
                 doFill(props, null);
                 doStroke(props);
 
@@ -1811,18 +1827,10 @@ public abstract class Sharp {
                 }
                 popTransform();
             } else if (!hidden2 && localName.equals("text")) {
-                if (mTextStack.isEmpty()) {
-                    pushTransform(atts);
-                    mTextStack.push(new SvgText(atts));
-                } else {
-                    Log.w(TAG, "Cannot process <text> tag nested inside another <text> tag");
-                }
+                pushTransform(atts);
+                mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
             } else if (!hidden2 && localName.equals("tspan")) {
-                if (!mTextStack.isEmpty()) {
-                    mTextStack.push(new SvgText(atts));
-                } else {
-                    Log.w(TAG, "Cannot process <tspan> tag outside of <text> tag");
-                }
+                mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
             } else if (!hidden2) {
                 Log.d(TAG, "Unrecognized SVG command: " + localName);
             }
@@ -1885,6 +1893,7 @@ public abstract class Sharp {
                     mFillSet = mFillSetStack.pop();
                     mStrokePaint = mStrokePaintStack.pop();
                     mStrokeSet = mStrokeSetStack.pop();
+                    mTextStack.pop();
                     break;
             }
         }
@@ -1903,7 +1912,7 @@ public abstract class Sharp {
             private String svgText;
             private int vAlign = 0;
 
-            public SvgText(Attributes atts) {
+            public SvgText(Attributes atts, SvgText parentText) {
                 id = getStringAttr("id", atts);
                 x = getFloatAttr("x", atts, 0f);
                 y = getFloatAttr("y", atts, 0f);
@@ -1911,12 +1920,12 @@ public abstract class Sharp {
 
                 Properties props = new Properties(atts);
                 if (doFill(props, null)) {
-                    fill = new Paint(mFillPaint);
-                    doText(atts, fill);
+                    fill = new Paint(parentText != null ? parentText.fill : mFillPaint);
+                    doText(atts, props, fill);
                 }
                 if (doStroke(props)) {
-                    stroke = new Paint(mStrokePaint);
-                    doText(atts, stroke);
+                    stroke = new Paint(parentText != null ? parentText.stroke : mStrokePaint);
+                    doText(atts, props, stroke);
                 }
                 // Quick hack for alignment
                 String valign = getStringAttr("alignment-baseline", atts);
@@ -1974,11 +1983,27 @@ public abstract class Sharp {
             }
         }
 
-        private Typeface setTypeFace(Attributes atts) {
-            String face = getStringAttr("font-family", atts);
+        private Typeface setTypeface(Attributes atts, Properties props, AssetManager assetManager, Typeface defaultTypeface) {
+            // Prefer a dedicated attribute
+            String family = getStringAttr("font-family", atts);
+            if (family == null) {
+                // Fall back to reading from "style" attribute
+                family = props.getString("font-family");
+            }
+            // Prefer a dedicated attribute
             String style = getStringAttr("font-style", atts);
+            if (style == null) {
+                // Fall back to reading from "style" attribute
+                style = props.getString("font-style");
+            }
+            // Prefer a dedicated attribute
             String weight = getStringAttr("font-weight", atts);
+            if (weight == null) {
+                // Fall back to reading from "style" attribute
+                weight = props.getString("font-weight");
+            }
 
+            // Set the style parameters
             int styleParam = Typeface.NORMAL;
             if ("italic".equals(style)) {
                 styleParam |= Typeface.ITALIC;
@@ -1986,16 +2011,59 @@ public abstract class Sharp {
             if ("bold".equals(weight)) {
                 styleParam |= Typeface.BOLD;
             }
-            Typeface plain = null;
-            if (null != face && null != sAssets && face.indexOf(".ttf") > 0) {
-                plain = Typeface.createFromAsset(sAssets, "fonts/" + face);
-                if (null != plain) {
-                    return Typeface.create(plain, styleParam);
+
+            Typeface plain;
+            if (family != null) {
+                // Attempt to load the typeface
+                if (assetManager != null) {
+                    Pattern pattern = Pattern.compile("'(.+?)'(?:,'(.+?)')*");
+                    Matcher matcher = pattern.matcher(family);
+                    if (matcher.matches()) {
+                        for (int i = 1; i < matcher.groupCount() + 1; i++) {
+                            if (matcher.group(i) != null) {
+                                family = matcher.group(i);
+                            }
+                        }
+                    }
+                    // Compose a filename
+                    String typefaceFile = "fonts/" + family + ".ttf";
+                    try {
+                        plain = Typeface.createFromAsset(assetManager, typefaceFile);
+                        Log.d(TAG, "loaded typeface from assets: " + typefaceFile);
+                    } catch (RuntimeException e) {
+                        boolean found = true;
+                        try {
+                            String[] fonts = assetManager.list("fonts/");
+                            found = false;
+                            for (String font : fonts) {
+                                if (typefaceFile.equals(font)) {
+                                    found = true;
+                                }
+                            }
+                        } catch (IOException e1) {
+                            Log.w(TAG, "Failed listing assets directory for /fonts", e);
+                        }
+                        if (!found) {
+                            Log.w(TAG, "Typeface is missing from assets: " + typefaceFile);
+                        } else {
+                            Log.w(TAG, "Failed to create typeface from assets: " + typefaceFile, e);
+                        }
+                        plain = null;
+                    }
+                    if (plain != null) {
+                        // Adapt the type face with the style
+                        return Typeface.create(plain, styleParam);
+                    }
+                } else {
+                    Log.w(TAG, "Typefaces can only be loaded if assets are provided; " +
+                            "invoke " + Sharp.class.getSimpleName() + " with .withAssets()");
                 }
             }
-
-            //Log.d(TAG, "typeface=" + result + " " + styleParam);
-            return Typeface.create(face, styleParam);
+            if (defaultTypeface == null) {
+                return Typeface.create(family, styleParam);
+            } else {
+                return Typeface.create(defaultTypeface, styleParam);
+            }
         }
     }
 
