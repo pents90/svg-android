@@ -46,7 +46,8 @@ It's recommended to use `into()` or `intoBackground()`, as the View parameter ta
 
 By loading an SVG from the assets directory using `loadAsset(AssetManager, String)`, or by loading it through a different mechanism and providing access to your application's assets using `withAssets(AssetManager)`, Sharp can read typeface files automatically from the assets directory.
 
-Sharp expects the typeface to be present as:  
+Sharp expects the typeface to be present as:
+
     /assets/fonts/[typeface name].ttf
 
 If your font does not appear, check Logcat for any insightful error messages.
@@ -63,5 +64,4 @@ You don't need to disable hardware acceleration on your entire application. Only
 
 ## Known issues
 
-1. Group opacity is not applied. In order to allow this to work correctly, the entire group would need to be drawn in a separate picture and applied as a whole. We want to avoid having to do this as this would have a significant performance hit and are open to alternative suggestions.
-2. Text size and position isn't accurate. Until we can get this sorted out, convert your text to paths if you want it to appear pixel-perfect.
+1. Text size and position isn't accurate. Until we can get this sorted out, convert your text to paths if you want it to appear pixel-perfect.
