@@ -1650,7 +1650,10 @@ public abstract class Sharp {
                 }
 
                 // If the group has an applied opacity, start drawing in a new canvas
-                Float opacity = props.getFloat("opacity");
+                Float opacity = getFloatAttr("opacity", atts);
+                if (opacity == null) {
+                    opacity = props.getFloat("opacity");
+                }
                 if (opacity != null && opacity < 1f) {
                     mCanvas.saveLayerAlpha(0, 0, mCanvas.getWidth(), mCanvas.getHeight(),
                             (int) (255 * opacity), Canvas.ALL_SAVE_FLAG);
