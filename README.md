@@ -53,5 +53,5 @@ You don't need to disable hardware acceleration on your entire application. Only
 
 ## Known issues
 
-1. Group opacity is not applied. In order to allow this to work correctly, the entire group would need to be drawn in a separate picture and applied as a whole. As this would have a significant performance hit, we want to avoid having to do this and are open to alternative suggestions.
+1. Group opacity is not applied. In order to allow this to work correctly, the entire group would need to be drawn in a separate picture and applied as a whole. We want to avoid having to do this as this would have a significant performance hit and are open to alternative suggestions.
 2. Text size and position isn't accurate. Until we can get this sorted out, convert your text to paths if you want it to appear pixel-perfect.
