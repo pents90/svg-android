@@ -89,6 +89,26 @@ public class SharpPicture {
     }
 
     /**
+     * Create a drawable from the SVG with its bounds set to {@code sizeInPixels} such that its
+     * aspect ratio is retained. A view may be provided so that it's LayerType is set to
+     * LAYER_TYPE_SOFTWARE.
+     *
+     * @param view         {@link View} that will hold this drawable
+     * @param sizeInPixels maximum width or height dimension of the drawable
+     * @return the Drawable.
+     */
+    public SharpDrawable createDrawable(@Nullable View view, int sizeInPixels) {
+        SharpDrawable drawable = getDrawable(view);
+        float ratio = (float) drawable.getIntrinsicWidth() / (float) drawable.getIntrinsicHeight();
+        if (ratio < 1) {
+            drawable.setBounds(0, 0, (int) (sizeInPixels * ratio), sizeInPixels);
+        } else {
+            drawable.setBounds(0, 0, sizeInPixels, (int) (sizeInPixels / ratio));
+        }
+        return drawable;
+    }
+
+    /**
      * Get the drawable from the SVG. This drawable may be cached; if you want a new drawable, call
      * {@link #createDrawable(View)}. A view may be provided so that it's LayerType is set to
      * LAYER_TYPE_SOFTWARE.
