@@ -46,7 +46,8 @@ It's recommended to use `into()` or `intoBackground()`, as the View parameter ta
 
 By loading an SVG from the assets directory using `loadAsset(AssetManager, String)`, or by loading it through a different mechanism and providing access to your application's assets using `withAssets(AssetManager)`, Sharp can read typeface files automatically from the assets directory.
 
-Sharp expects the typeface to be present as:  
+Sharp expects the typeface to be present as:
+
     /assets/fonts/[typeface name].ttf
 
 If your font does not appear, check Logcat for any insightful error messages.
