@@ -64,4 +64,4 @@ You don't need to disable hardware acceleration on your entire application. Only
 
 ## Known issues
 
-1. Text size and position isn't accurate. Until we can get this sorted out, convert your text to paths if you want it to appear pixel-perfect.
+1. Text size and position isn't accurate. It's recommended to convert all text to paths in order for it to appear pixel-perfect.
