@@ -36,10 +36,20 @@ Sharp facilitates the application of the resulting drawable as well, through the
 
 - `into(ImageView)` takes care of loading the SVG into the source of the ImageView, or falling back to setting the background if the view is not an ImageView;
 - `intoBackground(View)` takes care of loading the SVG into the View's background;
+- `withAssets(AssetManager)` provides access to your application's assets, allowing Sharp to read typefaces;
 - `getSharpPicture()` provides a wrapper containing a `Picture` and the SVG bounds and limits;
 - `getDrawable()` generates a `SharpDrawable`, which is a subclass of `PictureDrawable` that respects the `SharpPicture` boundaries.
 
 It's recommended to use `into()` or `intoBackground()`, as the View parameter takes care of setting the view's layer type to `View.LAYER_TYPE_SOFTWARE`.
+
+## Typefaces
+
+By loading an SVG from the assets directory using `loadAsset(AssetManager, String)`, or by loading it through a different mechanism and providing access to your application's assets using `withAssets(AssetManager)`, Sharp can read typeface files automatically from the assets directory.
+
+Sharp expects the typeface to be present as:  
+    /assets/fonts/[typeface name].ttf
+
+If your font does not appear, check Logcat for any insightful error messages.
 
 ## Why isn't my SVG appearing?
 
