@@ -100,8 +100,9 @@ public class SvgDemoActivity extends AppCompatActivity {
             // We don't want to use the same drawable, as we're specifying a custom size; therefore
             // we call createDrawable() instead of getDrawable()
             Drawable drawable = picture.createDrawable(mButton);
+            float ratio = (float) drawable.getIntrinsicWidth() / (float) drawable.getIntrinsicHeight();
             int iconSize = getResources().getDimensionPixelSize(R.dimen.icon_size);
-            drawable.setBounds(0, 0, iconSize, iconSize);
+            drawable.setBounds(0, 0, (int) (iconSize * ratio), iconSize);
             mButton.setCompoundDrawables(
                     drawable,
                     null, null, null);
