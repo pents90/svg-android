@@ -1655,7 +1655,13 @@ public abstract class Sharp {
                     opacity = props.getFloat("opacity");
                 }
                 if (opacity != null && opacity < 1f) {
-                    mCanvas.saveLayerAlpha(0, 0, mCanvas.getWidth(), mCanvas.getHeight(),
+                    // apply inverse of matrix to correct for any transformations
+                    Matrix m = mCanvas.getMatrix();
+                    m.invert(m);
+                    RectF r = new RectF(0, 0, mCanvas.getWidth(), mCanvas.getHeight());
+                    m.mapRect(r);
+                    // Store the layer with the opacity value
+                    mCanvas.saveLayerAlpha(r,
                             (int) (255 * opacity), Canvas.ALL_SAVE_FLAG);
                 } else {
                     mCanvas.save();
