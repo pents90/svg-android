@@ -26,6 +26,7 @@ package com.pixplicity.sharp;
 import android.annotation.TargetApi;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
@@ -1128,6 +1129,9 @@ public abstract class Sharp {
         private boolean mFillSet = false;
         private Stack<Paint> mFillPaintStack = new Stack<>();
         private Stack<Boolean> mFillSetStack = new Stack<>();
+
+        private Stack<SvgGroup> mGroupStack = new Stack<>();
+
         // Scratch rect (so we aren't constantly making new ones)
         private Line mLine = new Line();
         private RectF mRect = new RectF();
@@ -1647,6 +1651,25 @@ public abstract class Sharp {
                         //Log.d(TAG, "Hidden up: " + hiddenLevel);
                     }
                 }
+
+                SvgGroup g = null;
+                // If the group has an applied opacity, start drawing in a new canvas
+                Float opacity = props.getFloat("opacity");
+                if (opacity != null && opacity < 1f) {
+                    // Store current canvas and a new Picture to begin drawing on
+                    g = new SvgGroup();
+                    g.canvas = mCanvas;
+                    g.picture = new Picture();
+                    g.opacity = opacity;
+                    // Store opacity and other attributes
+                    // Start recording in a new picture
+                    mCanvas = g.picture.beginRecording(
+                            (int) Math.ceil(mBounds.width()),
+                            (int) Math.ceil(mBounds.height()));
+                }
+                // Stash the group, including the previous canvas
+                mGroupStack.push(g);
+
                 pushTransform(atts);
 
                 mFillPaintStack.push(new Paint(mFillPaint));
@@ -1894,8 +1917,35 @@ public abstract class Sharp {
                     mStrokePaint = mStrokePaintStack.pop();
                     mStrokeSet = mStrokeSetStack.pop();
                     mTextStack.pop();
+
+                    // Restore the previous canvas
+                    SvgGroup g = mGroupStack.pop();
+                    if (g != null) {
+                        mCanvas = g.canvas;
+                        Picture p = g.picture;
+                        p.endRecording();
+                        if (true) {
+                            mCanvas.drawPicture(p);
+                        } else {
+                            Bitmap b = Bitmap.createBitmap(p.getWidth(), p.getHeight(), Bitmap.Config.ARGB_8888);
+                            Canvas c = new Canvas(b);
+                            p.draw(c);
+                            Paint paint = new Paint();
+                            paint.setAlpha((int) (255 * g.opacity));
+                            mCanvas.drawBitmap(b, 0, 0, paint);
+                        }
+                    }
                     break;
             }
+        }
+
+        private class SvgGroup {
+
+            private Picture picture;
+            private Canvas canvas;
+
+            private float opacity;
+
         }
 
         /**

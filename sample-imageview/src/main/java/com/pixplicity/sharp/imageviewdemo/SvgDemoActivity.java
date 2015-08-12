@@ -60,7 +60,7 @@ public class SvgDemoActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.iv_image);
         mButton = (Button) findViewById(R.id.bt_button);
 
-        mSvg = Sharp.loadResource(getResources(), R.drawable.cartman);
+        mSvg = Sharp.loadResource(getResources(), R.drawable.group_transparency);
         // If you want to load typefaces from assets:
         //          .withAssets(getAssets());
 
