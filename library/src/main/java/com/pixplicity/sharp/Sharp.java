@@ -1144,7 +1144,8 @@ public abstract class Sharp {
         private final Stack<SvgText> mTextStack = new Stack<>();
 
         private HashMap<String, String> mDefs = new HashMap<>();
-        private boolean mDefsReading = false;
+        private boolean mReadingDefs = false;
+        private Stack<String> mReadIgnoreStack = new Stack<>();
 
         private SvgHandler(Sharp sharp, Picture picture) {
             mSharp = sharp;
@@ -1511,7 +1512,6 @@ public abstract class Sharp {
             if (y > mLimits.bottom) {
                 mLimits.bottom = y;
             }
-            Log.d(TAG, "new limits: " + mLimits);
         }
 
         final private RectF limitRect = new RectF();
@@ -1550,8 +1550,12 @@ public abstract class Sharp {
 
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+            if (!mReadIgnoreStack.empty()) {
+                // Ignore
+                return;
+            }
+
             String id = getStringAttr("id", atts);
-            Log.d(TAG, "element id=" + id);
 
             // Reset paint opacity
             mStrokePaint.setAlpha(255);
@@ -1613,8 +1617,7 @@ public abstract class Sharp {
                         (int) Math.ceil(mBounds.height()));
                 //Log.d(TAG, "canvas size: " + mCanvas.getWidth() + "x" + mCanvas.getHeight());
             } else if (localName.equals("defs")) {
-                // Ignore
-                mDefsReading = true;
+                mReadingDefs = true;
             } else if (localName.equals("linearGradient")) {
                 mGradient = doGradient(true, atts);
             } else if (localName.equals("radialGradient")) {
@@ -1655,6 +1658,8 @@ public abstract class Sharp {
                     opacity = props.getFloat("opacity");
                 }
                 if (opacity != null && opacity < 1f) {
+                    // FIXME Ideally, we should compute the bounds of the enclosed group, and create
+                    //       the layer exactly to its size; see issue #6
                     // Apply inverse of matrix to correct for any transformations
                     // It's okay to use getMatrix() here as we may assume its a software layer
                     Matrix m = mCanvas.getMatrix();
@@ -1813,7 +1818,7 @@ public abstract class Sharp {
             } else if (!hidden2 && localName.equals("path")) {
                 String d = getStringAttr("d", atts);
 
-                if (mDefsReading) {
+                if (mReadingDefs) {
                     mDefs.put(id, getStringAttr("d", atts));
                     return;
                 } else if (null == d) {
@@ -1853,7 +1858,15 @@ public abstract class Sharp {
             } else if (!hidden2 && localName.equals("tspan")) {
                 mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
             } else if (!hidden2) {
-                Log.d(TAG, "Unrecognized SVG command: " + localName);
+                switch (localName) {
+                    case "metadata":
+                        // Ignore, including children
+                        mReadIgnoreStack.push(localName);
+                        break;
+                    default:
+                        Log.d(TAG, "Unrecognized SVG command: " + localName);
+                        break;
+                }
             }
         }
 
@@ -1868,6 +1881,11 @@ public abstract class Sharp {
         @Override
         public void endElement(String namespaceURI, String localName, String qName)
                 throws SAXException {
+            if (!mReadIgnoreStack.empty() && localName.equals(mReadIgnoreStack.peek())) {
+                // Ignore
+                mReadIgnoreStack.pop();
+                return;
+            }
             switch (localName) {
                 case "svg":
                     mPicture.endRecording();
@@ -1893,7 +1911,7 @@ public abstract class Sharp {
                     break;
                 case "defs":
                     finishGradients();
-                    mDefsReading = false;
+                    mReadingDefs = false;
                     break;
                 case "g":
                     if (boundsMode) {
