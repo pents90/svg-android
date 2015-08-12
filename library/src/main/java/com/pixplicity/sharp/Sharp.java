@@ -1655,7 +1655,8 @@ public abstract class Sharp {
                     opacity = props.getFloat("opacity");
                 }
                 if (opacity != null && opacity < 1f) {
-                    // apply inverse of matrix to correct for any transformations
+                    // Apply inverse of matrix to correct for any transformations
+                    // It's okay to use getMatrix() here as we may assume its a software layer
                     Matrix m = mCanvas.getMatrix();
                     m.invert(m);
                     RectF r = new RectF(0, 0, mCanvas.getWidth(), mCanvas.getHeight());
