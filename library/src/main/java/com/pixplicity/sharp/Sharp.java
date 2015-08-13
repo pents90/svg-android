@@ -42,6 +42,7 @@ import android.graphics.Shader;
 import android.graphics.Shader.TileMode;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -158,9 +159,9 @@ public abstract class Sharp {
     }
 
     /**
-     * Parse SVG data from a string.
+     * Parse SVG data from a text.
      *
-     * @param svgData the string containing SVG XML data.
+     * @param svgData the text containing SVG XML data.
      * @return the parsed SVG.
      * @throws SvgParseException if there is an error while parsing.
      */
@@ -590,7 +591,7 @@ public abstract class Sharp {
      * <p/>
      * Numbers are separate by whitespace, comma or nothing at all (!) if they are self-delimiting, (ie. begin with a - sign)
      *
-     * @param s the path string from the XML
+     * @param s the path text from the XML
      */
     private static Path doPath(String s) {
         int n = s.length();
@@ -951,9 +952,9 @@ public abstract class Sharp {
         }
     }
 
-    private <T> T onSvgElement(String id, T element, Canvas canvas, Paint paint) {
+    private <T> T onSvgElement(String id, T element, RectF bounds, Canvas canvas, Paint paint) {
         if (mOnElementListener != null) {
-            return mOnElementListener.onSvgElement(id, element, canvas, paint);
+            return mOnElementListener.onSvgElement(id, element, bounds, canvas, paint);
         }
         return element;
     }
@@ -1191,8 +1192,8 @@ public abstract class Sharp {
             mSharp.onSvgEnd(mCanvas);
         }
 
-        private <T> T onSvgElement(String id, T element, Paint paint) {
-            return mSharp.onSvgElement(id, element, mCanvas, paint);
+        private <T> T onSvgElement(String id, T element, RectF bounds, Paint paint) {
+            return mSharp.onSvgElement(id, element, bounds, mCanvas, paint);
         }
 
         private <T> void onSvgElementDrawn(String id, T element) {
@@ -1721,7 +1722,8 @@ public abstract class Sharp {
 
                 SvgGroup group = new SvgGroup(id);
                 mGroupStack.push(group);
-                onSvgElement(id, group, null);
+                // FIXME compute bounds before drawing?
+                onSvgElement(id, group, null, null);
             } else if (!hidden2 && localName.equals("rect")) {
                 Float x = getFloatAttr("x", atts, 0f);
                 Float y = getFloatAttr("y", atts, 0f);
@@ -1752,7 +1754,7 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 mRect.set(x, y, x + width, y + height);
                 if (doFill(props, mRect)) {
-                    mRect = onSvgElement(id, mRect, mFillPaint);
+                    mRect = onSvgElement(id, mRect, mRect, mFillPaint);
                     if (mRect != null) {
                         mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
                         onSvgElementDrawn(id, mRect);
@@ -1760,12 +1762,12 @@ public abstract class Sharp {
                     doLimits(mRect);
                 }
                 if (doStroke(props)) {
-                    mRect = onSvgElement(id, mRect, mFillPaint);
+                    mRect = onSvgElement(id, mRect, mRect, mStrokePaint);
                     if (mRect != null) {
-                        mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                        mCanvas.drawRoundRect(mRect, rx, ry, mStrokePaint);
                         onSvgElementDrawn(id, mRect);
                     }
-                    doLimits(mRect, mFillPaint);
+                    doLimits(mRect, mStrokePaint);
                 }
                 popTransform();
             } else if (!hidden2 && localName.equals("line")) {
@@ -1778,7 +1780,7 @@ public abstract class Sharp {
                     pushTransform(atts);
                     mLine.set(x1, y1, x2, y2);
                     mRect.set(mLine);
-                    mLine = onSvgElement(id, mLine, mFillPaint);
+                    mLine = onSvgElement(id, mLine, mRect, mStrokePaint);
                     if (mLine != null) {
                         mCanvas.drawLine(mLine.left, mLine.top, mLine.right, mLine.bottom, mStrokePaint);
                         onSvgElementDrawn(id, mLine);
@@ -1803,7 +1805,7 @@ public abstract class Sharp {
                     Properties props = new Properties(atts);
                     mRect.set(centerX - radiusX, centerY - radiusY, centerX + radiusX, centerY + radiusY);
                     if (doFill(props, mRect)) {
-                        mRect = onSvgElement(id, mRect, mFillPaint);
+                        mRect = onSvgElement(id, mRect, mRect, mFillPaint);
                         if (mRect != null) {
                             mCanvas.drawOval(mRect, mFillPaint);
                             onSvgElementDrawn(id, mRect);
@@ -1811,7 +1813,7 @@ public abstract class Sharp {
                         doLimits(mRect);
                     }
                     if (doStroke(props)) {
-                        mRect = onSvgElement(id, mRect, mFillPaint);
+                        mRect = onSvgElement(id, mRect, mRect, mStrokePaint);
                         if (mRect != null) {
                             mCanvas.drawOval(mRect, mStrokePaint);
                             onSvgElementDrawn(id, mRect);
@@ -1840,7 +1842,7 @@ public abstract class Sharp {
                         }
                         p.computeBounds(mRect, false);
                         if (doFill(props, mRect)) {
-                            p = onSvgElement(id, p, mFillPaint);
+                            p = onSvgElement(id, p, mRect, mFillPaint);
                             if (p != null) {
                                 mCanvas.drawPath(p, mFillPaint);
                                 onSvgElementDrawn(id, p);
@@ -1848,7 +1850,7 @@ public abstract class Sharp {
                             doLimits(mRect);
                         }
                         if (doStroke(props)) {
-                            p = onSvgElement(id, p, mFillPaint);
+                            p = onSvgElement(id, p, mRect, mStrokePaint);
                             if (p != null) {
                                 mCanvas.drawPath(p, mStrokePaint);
                                 onSvgElementDrawn(id, p);
@@ -1881,7 +1883,7 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 p.computeBounds(mRect, false);
                 if (doFill(props, mRect)) {
-                    p = onSvgElement(id, p, mFillPaint);
+                    p = onSvgElement(id, p, mRect, mFillPaint);
                     if (p != null) {
                         mCanvas.drawPath(p, mFillPaint);
                         onSvgElementDrawn(id, p);
@@ -1889,7 +1891,7 @@ public abstract class Sharp {
                     doLimits(mRect);
                 }
                 if (doStroke(props)) {
-                    p = onSvgElement(id, p, mStrokePaint);
+                    p = onSvgElement(id, p, mRect, mStrokePaint);
                     if (p != null) {
                         mCanvas.drawPath(p, mStrokePaint);
                         onSvgElementDrawn(id, p);
@@ -1940,10 +1942,8 @@ public abstract class Sharp {
                 case "tspan":
                     if (!mTextStack.isEmpty()) {
                         SvgText text = mTextStack.pop();
-                        text = onSvgElement(text.id, text, mFillPaint);
                         if (text != null) {
                             text.render(mCanvas);
-                            onSvgElementDrawn(text.id, text);
                         }
                     }
                     if (localName.equals("text")) {
@@ -2007,68 +2007,131 @@ public abstract class Sharp {
          */
         public class SvgText {
 
+            private final static int LEFT = 0;
+            private final static int CENTER = 1;
+            private final static int RIGHT = 2;
+
+            private final static int BOTTOM = 0;
             private final static int MIDDLE = 1;
             private final static int TOP = 2;
 
             private final String id;
-            private Paint stroke = null, fill = null;
+            private TextPaint stroke = null, fill = null;
             private float x, y;
-            private String svgText;
-            private int vAlign = 0;
+            private String text;
+            private int hAlign = LEFT, vAlign = BOTTOM;
+            private RectF bounds = new RectF();
 
             public SvgText(Attributes atts, SvgText parentText) {
                 id = getStringAttr("id", atts);
                 x = getFloatAttr("x", atts, 0f);
                 y = getFloatAttr("y", atts, 0f);
-                svgText = null;
+                text = null;
 
                 Properties props = new Properties(atts);
                 if (doFill(props, null)) {
-                    fill = new Paint(parentText != null ? parentText.fill : mFillPaint);
+                    fill = new TextPaint(parentText != null ? parentText.fill : mFillPaint);
                     doText(atts, props, fill);
                 }
                 if (doStroke(props)) {
-                    stroke = new Paint(parentText != null ? parentText.stroke : mStrokePaint);
+                    stroke = new TextPaint(parentText != null ? parentText.stroke : mStrokePaint);
                     doText(atts, props, stroke);
                 }
-                // Quick hack for alignment
+                // Horizontal alignment
+                String halign = getStringAttr("text-align", atts);
+                if (halign == null) {
+                    halign = props.getString("text-align");
+                }
+                if (halign == null && parentText != null) {
+                    hAlign = parentText.hAlign;
+                } else {
+                    if ("center".equals(halign)) {
+                        hAlign = CENTER;
+                    } else if ("right".equals(halign)) {
+                        hAlign = RIGHT;
+                    }
+                }
+                // Vertical alignment
                 String valign = getStringAttr("alignment-baseline", atts);
-                if ("middle".equals(valign)) {
-                    vAlign = MIDDLE;
-                } else if ("top".equals(valign)) {
-                    vAlign = TOP;
+                if (valign == null) {
+                    valign = props.getString("alignment-baseline");
+                }
+                if (valign == null && parentText != null) {
+                    vAlign = parentText.vAlign;
+                } else {
+                    if ("middle".equals(valign)) {
+                        vAlign = MIDDLE;
+                    } else if ("top".equals(valign)) {
+                        vAlign = TOP;
+                    }
                 }
             }
 
             public void setText(char[] ch, int start, int len) {
-                if (svgText == null) {
-                    svgText = new String(ch, start, len);
+                if (text == null) {
+                    text = new String(ch, start, len);
                 } else {
-                    svgText += new String(ch, start, len);
+                    text += new String(ch, start, len);
                 }
-                if (null != sTextDynamic && sTextDynamic.containsKey(svgText)) {
-                    svgText = sTextDynamic.get(svgText);
+                if (null != sTextDynamic && sTextDynamic.containsKey(text)) {
+                    text = sTextDynamic.get(text);
                 }
 
-                // This is an experiment for vertical alignment
-                if (vAlign > 0) {
-                    Paint paint = stroke == null ? fill : stroke;
-                    Rect bnds = new Rect();
-                    paint.getTextBounds(svgText, 0, svgText.length(), bnds);
-                    //Log.i(TAG, "Adjusting " + y + " by " + bnds);
-                    y += (vAlign == MIDDLE) ? -bnds.centerY() : bnds.height();
+                // Correct vertical alignment
+                // FIXME can we just use the textSize instead?
+                Rect bnds = new Rect();
+                Paint paint = stroke == null ? fill : stroke;
+                paint.getTextBounds(text, 0, text.length(), bnds);
+                if (vAlign != BOTTOM) {
+                    //Log.d(TAG, "Adjusting y=" + y + " for boundaries=" + bnds);
+                    switch (vAlign) {
+                        case TOP:
+                            y += bnds.height();
+                            break;
+                        case MIDDLE:
+                            y += -bnds.centerY();
+                            break;
+                        case BOTTOM:
+                            // Default; no correction needed
+                            break;
+                    }
                 }
+                float width = paint.measureText(text);
+                // Correct horizontal alignment
+                if (hAlign != LEFT) {
+                    switch (hAlign) {
+                        case LEFT:
+                            // Default; no correction needed
+                            break;
+                        case CENTER:
+                            x -= width / 2f;
+                            break;
+                        case RIGHT:
+                            x -= width;
+                    }
+                }
+                bounds.set(x, y, x + width, y + bnds.height());
             }
 
             public void render(Canvas canvas) {
-                //Log.i(TAG, "Drawing: " + svgText + " " + x + "," + y);
-                if (svgText != null) {
+                //Log.i(TAG, "Drawing: " + text + " " + x + "," + y);
+                if (text != null) {
+                    // FIXME compute bounds of text
                     if (fill != null) {
-                        canvas.drawText(svgText, x, y, fill);
+                        drawText(canvas, this, true);
                     }
                     if (stroke != null) {
-                        canvas.drawText(svgText, x, y, stroke);
+                        drawText(canvas, this, false);
                     }
+                }
+            }
+
+            private void drawText(Canvas canvas, SvgText text, boolean fill) {
+                TextPaint paint = fill ? text.fill : text.stroke;
+                SvgText text2 = onSvgElement(id, this, bounds, paint);
+                if (text2 != null) {
+                    canvas.drawText(text2.text, x, y, paint);
+                    onSvgElementDrawn(text.id, text);
                 }
             }
         }

@@ -25,14 +25,16 @@ package com.pixplicity.sharp;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RectF;
 
+@SuppressWarnings("unused")
 public interface OnSvgElementListener {
 
     void onSvgStart(Canvas canvas);
 
     void onSvgEnd(Canvas canvas);
 
-    <T> T onSvgElement(String id, T element, Canvas canvas, Paint paint);
+    <T> T onSvgElement(String id, T element, RectF bounds, Canvas canvas, Paint paint);
 
     <T> void onSvgElementDrawn(String id, T element, Canvas canvas);
 
