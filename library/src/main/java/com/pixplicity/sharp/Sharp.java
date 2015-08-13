@@ -940,21 +940,21 @@ public abstract class Sharp {
         }
     }
 
-    private void onSvgStart(Canvas canvas) {
+    private void onSvgStart(Canvas canvas, RectF bounds) {
         if (mOnElementListener != null) {
-            mOnElementListener.onSvgStart(canvas);
+            mOnElementListener.onSvgStart(canvas, bounds);
         }
     }
 
-    private void onSvgEnd(Canvas canvas) {
+    private void onSvgEnd(Canvas canvas, RectF bounds) {
         if (mOnElementListener != null) {
-            mOnElementListener.onSvgStart(canvas);
+            mOnElementListener.onSvgStart(canvas, bounds);
         }
     }
 
-    private <T> T onSvgElement(String id, T element, RectF bounds, Canvas canvas, Paint paint) {
+    private <T> T onSvgElement(String id, T element, RectF elementBounds, Canvas canvas, RectF canvasBounds, Paint paint) {
         if (mOnElementListener != null) {
-            return mOnElementListener.onSvgElement(id, element, bounds, canvas, paint);
+            return mOnElementListener.onSvgElement(id, element, elementBounds, canvas, canvasBounds, paint);
         }
         return element;
     }
@@ -1185,15 +1185,15 @@ public abstract class Sharp {
         }
 
         private void onSvgStart() {
-            mSharp.onSvgStart(mCanvas);
+            mSharp.onSvgStart(mCanvas, mBounds);
         }
 
         private void onSvgEnd() {
-            mSharp.onSvgEnd(mCanvas);
+            mSharp.onSvgEnd(mCanvas, mBounds);
         }
 
-        private <T> T onSvgElement(String id, T element, RectF bounds, Paint paint) {
-            return mSharp.onSvgElement(id, element, bounds, mCanvas, paint);
+        private <T> T onSvgElement(String id, T element, RectF elementBounds, Paint paint) {
+            return mSharp.onSvgElement(id, element, elementBounds, mCanvas, mBounds, paint);
         }
 
         private <T> void onSvgElementDrawn(String id, T element) {
@@ -1531,7 +1531,7 @@ public abstract class Sharp {
         private int hiddenLevel = 0;
         private boolean boundsMode = false;
 
-        private void doLimits2(float x, float y) {
+        private void doLimits(float x, float y) {
             if (x < mLimits.left) {
                 mLimits.left = x;
             }
@@ -1552,8 +1552,8 @@ public abstract class Sharp {
             Matrix m = mMatrixStack.peek();
             m.mapRect(limitRect, box);
             float width2 = (paint == null) ? 0 : mStrokePaint.getStrokeWidth() / 2;
-            doLimits2(limitRect.left - width2, limitRect.top - width2);
-            doLimits2(limitRect.right + width2, limitRect.bottom + width2);
+            doLimits(limitRect.left - width2, limitRect.top - width2);
+            doLimits(limitRect.right + width2, limitRect.bottom + width2);
         }
 
         private void doLimits(RectF box) {

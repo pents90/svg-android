@@ -26,6 +26,7 @@ package com.pixplicity.sharp.imageviewdemo;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -82,15 +83,15 @@ public class SvgDemoActivity extends AppCompatActivity {
         mSvg.setOnElementListener(new OnSvgElementListener() {
 
             @Override
-            public void onSvgStart(Canvas canvas) {
+            public void onSvgStart(Canvas canvas, RectF bounds) {
             }
 
             @Override
-            public void onSvgEnd(Canvas canvas) {
+            public void onSvgEnd(Canvas canvas, RectF bounds) {
             }
 
             @Override
-            public <T> T onSvgElement(String id, T element, Canvas canvas, Paint paint) {
+            public <T> T onSvgElement(String id, T element, RectF elementBounds, Canvas canvas, RectF canvasBounds, Paint paint) {
                 if (changeColor && ("shirt".equals(id) || "hat".equals(id) || "pants".equals(id))) {
                     Random random = new Random();
                     paint.setColor(Color.argb(255, random.nextInt(256),
