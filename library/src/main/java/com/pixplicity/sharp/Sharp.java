@@ -635,8 +635,21 @@ public abstract class Sharp {
 
             boolean wasCurve = false;
             switch (cmd) {
+                case 'Z':
+                case 'z': {
+                    // Close path
+                    p.close();
+                    p.moveTo(subPathStartX, subPathStartY);
+                    lastX = subPathStartX;
+                    lastY = subPathStartY;
+                    lastX1 = subPathStartX;
+                    lastY1 = subPathStartY;
+                    wasCurve = true;
+                    break;
+                }
                 case 'M':
                 case 'm': {
+                    // Move
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
@@ -654,22 +667,9 @@ public abstract class Sharp {
                     }
                     break;
                 }
-                case 'Z':
-                case 'z': {
-                    p.close();
-                    p.moveTo(subPathStartX, subPathStartY);
-                    lastX = subPathStartX;
-                    lastY = subPathStartY;
-                    lastX1 = subPathStartX;
-                    lastY1 = subPathStartY;
-                    wasCurve = true;
-                    break;
-                }
-                case 'T':
-                case 't':
-                    // todo - smooth quadratic Bezier (two parameters)
                 case 'L':
                 case 'l': {
+                    // Line
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
@@ -685,6 +685,7 @@ public abstract class Sharp {
                 }
                 case 'H':
                 case 'h': {
+                    // Horizontal line
                     float x = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
                         p.rLineTo(x, 0);
@@ -697,6 +698,7 @@ public abstract class Sharp {
                 }
                 case 'V':
                 case 'v': {
+                    // Vertical line
                     float y = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
                         p.rLineTo(0, y);
@@ -733,28 +735,6 @@ public abstract class Sharp {
                     lastY = y;
                     break;
                 }
-                case 'Q':
-                case 'q': {
-                    // Quadratic Bézier (four parameters)
-                    wasCurve = true;
-                    float x1 = ph.nextFloat();
-                    float y1 = ph.nextFloat();
-                    float x = ph.nextFloat();
-                    float y = ph.nextFloat();
-                    if (Character.isLowerCase(cmd)) {
-                        // Relative coordinates
-                        x1 += lastX;
-                        x += lastX;
-                        y1 += lastY;
-                        y += lastY;
-                    }
-                    p.quadTo(x1, y1, x, y);
-                    lastX1 = x1;
-                    lastY1 = y1;
-                    lastX = x;
-                    lastY = y;
-                }
-                break;
                 case 'S':
                 case 's': {
                     // Shorthand cubic Bézier (four parameters)
@@ -779,8 +759,36 @@ public abstract class Sharp {
                     lastY = y;
                     break;
                 }
+                case 'Q':
+                case 'q': {
+                    // Quadratic Bézier (four parameters)
+                    wasCurve = true;
+                    float x1 = ph.nextFloat();
+                    float y1 = ph.nextFloat();
+                    float x = ph.nextFloat();
+                    float y = ph.nextFloat();
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
+                        x1 += lastX;
+                        x += lastX;
+                        y1 += lastY;
+                        y += lastY;
+                    }
+                    p.quadTo(x1, y1, x, y);
+                    lastX1 = x1;
+                    lastY1 = y1;
+                    lastX = x;
+                    lastY = y;
+                }
+                break;
+                case 'T':
+                case 't': {
+                    // TODO Shorthand quadratic Bézier (two parameters)
+                    break;
+                }
                 case 'A':
                 case 'a': {
+                    // Elliptical arc
                     float rx = ph.nextFloat();
                     float ry = ph.nextFloat();
                     float theta = ph.nextFloat();
