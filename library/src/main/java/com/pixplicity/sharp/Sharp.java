@@ -779,11 +779,26 @@ public abstract class Sharp {
                     lastY1 = y1;
                     lastX = x;
                     lastY = y;
+                    break;
                 }
-                break;
                 case 'T':
                 case 't': {
                     // TODO Shorthand quadratic Bézier (two parameters)
+                    wasCurve = true;
+                    float x = ph.nextFloat();
+                    float y = ph.nextFloat();
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
+                        x += lastX;
+                        y += lastY;
+                    }
+                    float x1 = 2 * lastX - lastX1;
+                    float y1 = 2 * lastY - lastY1;
+                    p.quadTo(x1, y1, x, y);
+                    lastX1 = x1;
+                    lastY1 = y1;
+                    lastX = x;
+                    lastY = y;
                     break;
                 }
                 case 'A':
