@@ -1160,6 +1160,7 @@ public abstract class Sharp {
         private Gradient mGradient = null;
 
         private final Stack<SvgText> mTextStack = new Stack<>();
+        private final Stack<SvgGroup> mGroupStack = new Stack<>();
 
         private HashMap<String, String> mDefs = new HashMap<>();
         private boolean mReadingDefs = false;
@@ -1717,6 +1718,10 @@ public abstract class Sharp {
 
                 mFillSet |= (props.getString("fill") != null);
                 mStrokeSet |= (props.getString("stroke") != null);
+
+                SvgGroup group = new SvgGroup(id);
+                mGroupStack.push(group);
+                onSvgElement(id, group, null);
             } else if (!hidden2 && localName.equals("rect")) {
                 Float x = getFloatAttr("x", atts, 0f);
                 Float y = getFloatAttr("y", atts, 0f);
@@ -1956,6 +1961,9 @@ public abstract class Sharp {
                     mReadingDefs = false;
                     break;
                 case "g":
+                    SvgGroup group = mGroupStack.pop();
+                    onSvgElementDrawn(group.id, group);
+
                     if (boundsMode) {
                         boundsMode = false;
                     }
@@ -1980,6 +1988,17 @@ public abstract class Sharp {
                     mCanvas.restore();
                     break;
             }
+        }
+
+
+        public class SvgGroup {
+
+            private final String id;
+
+            public SvgGroup(String id) {
+                this.id = id;
+            }
+
         }
 
 
