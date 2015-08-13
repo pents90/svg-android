@@ -939,11 +939,29 @@ public abstract class Sharp {
         }
     }
 
-    private <T> T onSvgElement(String id, T p, Paint paint) {
+    private void onSvgStart(Canvas canvas) {
         if (mOnElementListener != null) {
-            return mOnElementListener.onSvgElement(id, p, paint);
+            mOnElementListener.onSvgStart(canvas);
         }
-        return p;
+    }
+
+    private void onSvgEnd(Canvas canvas) {
+        if (mOnElementListener != null) {
+            mOnElementListener.onSvgStart(canvas);
+        }
+    }
+
+    private <T> T onSvgElement(String id, T element, Canvas canvas, Paint paint) {
+        if (mOnElementListener != null) {
+            return mOnElementListener.onSvgElement(id, element, canvas, paint);
+        }
+        return element;
+    }
+
+    private <T> void onSvgElementDrawn(String id, T element, Canvas canvas) {
+        if (mOnElementListener != null) {
+            mOnElementListener.onSvgElementDrawn(id, element, canvas);
+        }
     }
 
     private static class NumberParse {
@@ -1164,8 +1182,20 @@ public abstract class Sharp {
             return mSharp.getColorForId(id, color);
         }
 
-        private <T> T onSvgElement(String id, T p, Paint paint) {
-            return mSharp.onSvgElement(id, p, paint);
+        private void onSvgStart() {
+            mSharp.onSvgStart(mCanvas);
+        }
+
+        private void onSvgEnd() {
+            mSharp.onSvgEnd(mCanvas);
+        }
+
+        private <T> T onSvgElement(String id, T element, Paint paint) {
+            return mSharp.onSvgElement(id, element, mCanvas, paint);
+        }
+
+        private <T> void onSvgElementDrawn(String id, T element) {
+            mSharp.onSvgElementDrawn(id, element, mCanvas);
         }
 
         public void read(InputStream in) {
@@ -1616,6 +1646,7 @@ public abstract class Sharp {
                         (int) Math.ceil(mBounds.width()),
                         (int) Math.ceil(mBounds.height()));
                 //Log.d(TAG, "canvas size: " + mCanvas.getWidth() + "x" + mCanvas.getHeight());
+                onSvgStart();
             } else if (localName.equals("defs")) {
                 mReadingDefs = true;
             } else if (localName.equals("linearGradient")) {
@@ -1719,6 +1750,7 @@ public abstract class Sharp {
                     mRect = onSvgElement(id, mRect, mFillPaint);
                     if (mRect != null) {
                         mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                        onSvgElementDrawn(id, mRect);
                     }
                     doLimits(mRect);
                 }
@@ -1726,6 +1758,7 @@ public abstract class Sharp {
                     mRect = onSvgElement(id, mRect, mFillPaint);
                     if (mRect != null) {
                         mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                        onSvgElementDrawn(id, mRect);
                     }
                     doLimits(mRect, mFillPaint);
                 }
@@ -1743,6 +1776,7 @@ public abstract class Sharp {
                     mLine = onSvgElement(id, mLine, mFillPaint);
                     if (mLine != null) {
                         mCanvas.drawLine(mLine.left, mLine.top, mLine.right, mLine.bottom, mStrokePaint);
+                        onSvgElementDrawn(id, mLine);
                     }
                     doLimits(mRect, mStrokePaint);
                     popTransform();
@@ -1767,6 +1801,7 @@ public abstract class Sharp {
                         mRect = onSvgElement(id, mRect, mFillPaint);
                         if (mRect != null) {
                             mCanvas.drawOval(mRect, mFillPaint);
+                            onSvgElementDrawn(id, mRect);
                         }
                         doLimits(mRect);
                     }
@@ -1774,6 +1809,7 @@ public abstract class Sharp {
                         mRect = onSvgElement(id, mRect, mFillPaint);
                         if (mRect != null) {
                             mCanvas.drawOval(mRect, mStrokePaint);
+                            onSvgElementDrawn(id, mRect);
                         }
                         doLimits(mRect, mStrokePaint);
                     }
@@ -1802,6 +1838,7 @@ public abstract class Sharp {
                             p = onSvgElement(id, p, mFillPaint);
                             if (p != null) {
                                 mCanvas.drawPath(p, mFillPaint);
+                                onSvgElementDrawn(id, p);
                             }
                             doLimits(mRect);
                         }
@@ -1809,6 +1846,7 @@ public abstract class Sharp {
                             p = onSvgElement(id, p, mFillPaint);
                             if (p != null) {
                                 mCanvas.drawPath(p, mStrokePaint);
+                                onSvgElementDrawn(id, p);
                             }
                             doLimits(mRect, mStrokePaint);
                         }
@@ -1841,6 +1879,7 @@ public abstract class Sharp {
                     p = onSvgElement(id, p, mFillPaint);
                     if (p != null) {
                         mCanvas.drawPath(p, mFillPaint);
+                        onSvgElementDrawn(id, p);
                     }
                     doLimits(mRect);
                 }
@@ -1848,6 +1887,7 @@ public abstract class Sharp {
                     p = onSvgElement(id, p, mStrokePaint);
                     if (p != null) {
                         mCanvas.drawPath(p, mStrokePaint);
+                        onSvgElementDrawn(id, p);
                     }
                     doLimits(mRect, mStrokePaint);
                 }
@@ -1888,6 +1928,7 @@ public abstract class Sharp {
             }
             switch (localName) {
                 case "svg":
+                    onSvgEnd();
                     mPicture.endRecording();
                     break;
                 case "text":
@@ -1897,6 +1938,7 @@ public abstract class Sharp {
                         text = onSvgElement(text.id, text, mFillPaint);
                         if (text != null) {
                             text.render(mCanvas);
+                            onSvgElementDrawn(text.id, text);
                         }
                     }
                     if (localName.equals("text")) {
@@ -1944,7 +1986,7 @@ public abstract class Sharp {
         /**
          * Holds text properties as these are only applied with the end tag is encountered.
          */
-        private class SvgText {
+        public class SvgText {
 
             private final static int MIDDLE = 1;
             private final static int TOP = 2;

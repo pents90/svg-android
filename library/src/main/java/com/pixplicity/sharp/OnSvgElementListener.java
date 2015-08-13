@@ -23,10 +23,17 @@
 
 package com.pixplicity.sharp;
 
+import android.graphics.Canvas;
 import android.graphics.Paint;
 
 public interface OnSvgElementListener {
 
-    <T> T onSvgElement(String id, T element, Paint paint);
+    void onSvgStart(Canvas canvas);
+
+    void onSvgEnd(Canvas canvas);
+
+    <T> T onSvgElement(String id, T element, Canvas canvas, Paint paint);
+
+    <T> void onSvgElementDrawn(String id, T element, Canvas canvas);
 
 }
