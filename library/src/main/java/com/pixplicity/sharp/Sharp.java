@@ -639,7 +639,7 @@ public abstract class Sharp {
                 case 'm': {
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 'm') {
+                    if (Character.isLowerCase(cmd)) {
                         subPathStartX += x;
                         subPathStartY += y;
                         p.rMoveTo(x, y);
@@ -672,7 +672,7 @@ public abstract class Sharp {
                 case 'l': {
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 'l') {
+                    if (Character.isLowerCase(cmd)) {
                         p.rLineTo(x, y);
                         lastX += x;
                         lastY += y;
@@ -686,7 +686,7 @@ public abstract class Sharp {
                 case 'H':
                 case 'h': {
                     float x = ph.nextFloat();
-                    if (cmd == 'h') {
+                    if (Character.isLowerCase(cmd)) {
                         p.rLineTo(x, 0);
                         lastX += x;
                     } else {
@@ -698,7 +698,7 @@ public abstract class Sharp {
                 case 'V':
                 case 'v': {
                     float y = ph.nextFloat();
-                    if (cmd == 'v') {
+                    if (Character.isLowerCase(cmd)) {
                         p.rLineTo(0, y);
                         lastY += y;
                     } else {
@@ -709,6 +709,7 @@ public abstract class Sharp {
                 }
                 case 'C':
                 case 'c': {
+                    // Cubic Bézier (six parameters)
                     wasCurve = true;
                     float x1 = ph.nextFloat();
                     float y1 = ph.nextFloat();
@@ -716,7 +717,8 @@ public abstract class Sharp {
                     float y2 = ph.nextFloat();
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 'c') {
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
                         x1 += lastX;
                         x2 += lastX;
                         x += lastX;
@@ -732,16 +734,37 @@ public abstract class Sharp {
                     break;
                 }
                 case 'Q':
-                case 'q':
-                    // todo - quadratic Bezier (four parameters)
+                case 'q': {
+                    // Quadratic Bézier (four parameters)
+                    wasCurve = true;
+                    float x1 = ph.nextFloat();
+                    float y1 = ph.nextFloat();
+                    float x = ph.nextFloat();
+                    float y = ph.nextFloat();
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
+                        x1 += lastX;
+                        x += lastX;
+                        y1 += lastY;
+                        y += lastY;
+                    }
+                    p.quadTo(x1, y1, x, y);
+                    lastX1 = x1;
+                    lastY1 = y1;
+                    lastX = x;
+                    lastY = y;
+                }
+                break;
                 case 'S':
                 case 's': {
+                    // Shorthand cubic Bézier (four parameters)
                     wasCurve = true;
                     float x2 = ph.nextFloat();
                     float y2 = ph.nextFloat();
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
                         x2 += lastX;
                         x += lastX;
                         y2 += lastY;
