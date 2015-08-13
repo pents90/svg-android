@@ -2031,10 +2031,14 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 if (doFill(props, null)) {
                     fill = new TextPaint(parentText != null ? parentText.fill : mFillPaint);
+                    // Fix for https://code.google.com/p/android/issues/detail?id=39755
+                    fill.setLinearText(true);
                     doText(atts, props, fill);
                 }
                 if (doStroke(props)) {
                     stroke = new TextPaint(parentText != null ? parentText.stroke : mStrokePaint);
+                    // Fix for https://code.google.com/p/android/issues/detail?id=39755
+                    stroke.setLinearText(true);
                     doText(atts, props, stroke);
                 }
                 // Horizontal alignment
