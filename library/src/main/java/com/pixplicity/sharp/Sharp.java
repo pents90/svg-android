@@ -350,10 +350,21 @@ public abstract class Sharp {
     }
 
     @SuppressWarnings("unused")
-    public void into(View view) {
-        // FIXME this must be executed on the main thread
+    public void into(final View view) {
         if (view instanceof ImageView) {
-            ((ImageView) view).setImageDrawable(getDrawable(view));
+            final SharpDrawable drawable = getDrawable(view);
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                // Set it immediately if on the main thread
+                ((ImageView) view).setImageDrawable(drawable);
+            } else {
+                // Otherwise, set it on through the view's Looper
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((ImageView) view).setImageDrawable(drawable);
+                    }
+                });
+            }
         } else {
             intoBackground(view);
         }
@@ -361,12 +372,27 @@ public abstract class Sharp {
 
     @SuppressWarnings("unused, deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    private void intoBackground(View view) {
-        // FIXME this must be executed on the main thread
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            view.setBackgroundDrawable(getDrawable(view));
+    private void intoBackground(final View view) {
+        final SharpDrawable drawable = getDrawable(view);
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // Set it immediately if on the main thread
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                view.setBackgroundDrawable(drawable);
+            } else {
+                view.setBackground(drawable);
+            }
         } else {
-            view.setBackground(getDrawable(view));
+            // Otherwise, set it on through the view's Looper
+            view.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                        view.setBackgroundDrawable(drawable);
+                    } else {
+                        view.setBackground(drawable);
+                    }
+                }
+            });
         }
     }
 
