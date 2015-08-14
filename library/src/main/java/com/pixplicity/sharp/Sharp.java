@@ -44,6 +44,7 @@ import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
@@ -193,17 +194,7 @@ public abstract class Sharp {
                 InputStream inputStream = resources.openRawResource(resId);
                 if (Looper.myLooper() != Looper.getMainLooper()) {
                     // Read the contents of the resource if we're not on the main thread
-                    StringBuilder svgData = new StringBuilder();
-                    Scanner scanner = new Scanner(inputStream);
-                    String lineSeparator = System.getProperty("line.separator");
-                    try {
-                        while (scanner.hasNextLine()) {
-                            svgData.append(scanner.nextLine()).append(lineSeparator);
-                        }
-                    } finally {
-                        scanner.close();
-                    }
-                    inputStream = new ByteArrayInputStream(svgData.toString().getBytes());
+                    inputStream = readInputStream(inputStream);
                 }
                 return inputStream;
             }
@@ -212,6 +203,22 @@ public abstract class Sharp {
             protected void close(InputStream inputStream) {
             }
         };
+    }
+
+    @NonNull
+    private static InputStream readInputStream(InputStream inputStream) {
+        StringBuilder svgData = new StringBuilder();
+        Scanner scanner = new Scanner(inputStream);
+        String lineSeparator = System.getProperty("line.separator");
+        try {
+            while (scanner.hasNextLine()) {
+                svgData.append(scanner.nextLine()).append(lineSeparator);
+            }
+        } finally {
+            scanner.close();
+        }
+        inputStream = new ByteArrayInputStream(svgData.toString().getBytes());
+        return inputStream;
     }
 
     /**
@@ -224,17 +231,20 @@ public abstract class Sharp {
      */
     @SuppressWarnings("unused")
     public static Sharp loadAsset(final AssetManager assetMngr,
-                                  final String svgPath)
-            throws IOException {
+                                  final String svgPath) {
         return new Sharp() {
+            protected InputStream getInputStream() throws IOException {
+                InputStream inputStream = assetMngr.open(svgPath);
+                if (Looper.myLooper() != Looper.getMainLooper()) {
+                    // Read the contents of the resource if we're not on the main thread
+                    inputStream = readInputStream(inputStream);
+                }
+                return inputStream;
+            }
+
             @Override
             protected void close(InputStream inputStream) throws IOException {
                 inputStream.close();
-            }
-
-            protected InputStream getInputStream() throws IOException {
-                // FIXME do we need the same thread-safe solution as loadResource()?
-                return assetMngr.open(svgPath);
             }
         };
     }
@@ -460,30 +470,31 @@ public abstract class Sharp {
     }
 
     public void getSharpPicture(final PictureCallback callback) {
-        InputStream inputStream = null;
-        try {
-            inputStream = getInputStream();
-            final InputStream is = inputStream;
-            new AsyncTask<Void, Void, SharpPicture>() {
-                @Override
-                protected SharpPicture doInBackground(Void... params) {
-                    return getSharpPicture(is);
+        new AsyncTask<Void, Void, SharpPicture>() {
+            @Override
+            protected SharpPicture doInBackground(Void... params) {
+                InputStream inputStream = null;
+                try {
+                    inputStream = getInputStream();
+                    return getSharpPicture(inputStream);
+                } catch (IOException e) {
+                    throw new SvgParseException(e);
+                } finally {
+                    try {
+                        if (inputStream != null) {
+                            close(inputStream);
+                        }
+                    } catch (IOException e) {
+                        throw new SvgParseException(e);
+                    }
                 }
-
-                @Override
-                protected void onPostExecute(SharpPicture sharpPicture) {
-                    callback.onPictureReady(sharpPicture);
-                }
-            }.execute();
-        } catch (IOException e) {
-            throw new SvgParseException(e);
-        } finally {
-            try {
-                close(inputStream);
-            } catch (IOException e) {
-                throw new SvgParseException(e);
             }
-        }
+
+            @Override
+            protected void onPostExecute(SharpPicture sharpPicture) {
+                callback.onPictureReady(sharpPicture);
+            }
+        }.execute();
     }
 
     private static NumberParse parseNumbers(String s) {
