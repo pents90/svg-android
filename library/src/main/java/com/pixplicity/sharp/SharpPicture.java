@@ -52,11 +52,6 @@ public class SharpPicture {
     private RectF mLimits = null;
 
     /**
-     * A cached {@link SharpDrawable} that contains the Picture.
-     */
-    private SharpDrawable mDrawable;
-
-    /**
      * Construct a new SVG.
      *
      * @param picture the parsed picture object.
@@ -74,18 +69,6 @@ public class SharpPicture {
      */
     void setLimits(RectF limits) {
         mLimits = limits;
-    }
-
-    /**
-     * Create a drawable from the SVG. A view may be provided so that it's LayerType is set to
-     * LAYER_TYPE_SOFTWARE.
-     *
-     * @param view {@link View} that will hold this drawable
-     * @return the Drawable.
-     */
-    public SharpDrawable createDrawable(@Nullable View view) {
-        mDrawable = null;
-        return getDrawable(view);
     }
 
     /**
@@ -109,20 +92,14 @@ public class SharpPicture {
     }
 
     /**
-     * Get the drawable from the SVG. This drawable may be cached; if you want a new drawable, call
-     * {@link #createDrawable(View)}. A view may be provided so that it's LayerType is set to
+     * Create a drawable from the SVG. A view may be provided so that it's LayerType is set to
      * LAYER_TYPE_SOFTWARE.
      *
      * @param view {@link View} that will hold this drawable
      * @return the Drawable.
      */
     public SharpDrawable getDrawable(@Nullable View view) {
-        if (true || mDrawable == null) {
-            mDrawable = new SharpDrawable(view, mPicture);
-        } else {
-            SharpDrawable.prepareView(view);
-        }
-        return mDrawable;
+        return new SharpDrawable(view, mPicture);
     }
 
     /**
