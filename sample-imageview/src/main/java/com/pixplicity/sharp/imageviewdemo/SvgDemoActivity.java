@@ -105,24 +105,27 @@ public class SvgDemoActivity extends AppCompatActivity {
             }
 
         });
-        SharpPicture picture = mSvg.getSharpPicture();
+        mSvg.getSharpPicture(new Sharp.PictureCallback() {
+            @Override
+            public void onPictureReady(SharpPicture picture) {
+                {
+                    Drawable drawable = picture.getDrawable(mImageView);
+                    mImageView.setImageDrawable(drawable);
+                }
 
-        {
-            Drawable drawable = picture.createDrawable(mImageView);
-            mImageView.setImageDrawable(drawable);
-        }
+                {
+                    // We don't want to use the same drawable, as we're specifying a custom size; therefore
+                    // we call createDrawable() instead of getDrawable()
+                    int iconSize = getResources().getDimensionPixelSize(R.dimen.icon_size);
+                    Drawable drawable = picture.createDrawable(mButton, iconSize);
+                    mButton.setCompoundDrawables(
+                            drawable,
+                            null, null, null);
+                }
 
-        {
-            // We don't want to use the same drawable, as we're specifying a custom size; therefore
-            // we call createDrawable() instead of getDrawable()
-            int iconSize = getResources().getDimensionPixelSize(R.dimen.icon_size);
-            Drawable drawable = picture.createDrawable(mButton, iconSize);
-            mButton.setCompoundDrawables(
-                    drawable,
-                    null, null, null);
-        }
-
-        mAttacher.update();
+                mAttacher.update();
+            }
+        });
     }
 
 }

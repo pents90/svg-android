@@ -29,6 +29,7 @@ import android.graphics.Picture;
 import android.graphics.Rect;
 import android.graphics.drawable.PictureDrawable;
 import android.os.Build;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.view.View;
 
@@ -51,9 +52,18 @@ public class SharpDrawable extends PictureDrawable {
         prepareView(view);
     }
 
-    static void prepareView(@Nullable View view) {
+    static void prepareView(@Nullable final View view) {
         if (view != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            } else {
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                    }
+                });
+            }
         }
     }
 

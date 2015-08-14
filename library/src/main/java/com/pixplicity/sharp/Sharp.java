@@ -41,7 +41,9 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Shader.TileMode;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Looper;
 import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
@@ -61,6 +63,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -142,11 +145,9 @@ public abstract class Sharp {
      *
      * @param svgData the input stream, with SVG XML data in UTF-8 character encoding.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadInputStream(final InputStream svgData)
-            throws SvgParseException {
+    public static Sharp loadInputStream(final InputStream svgData) {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return svgData;
@@ -163,11 +164,9 @@ public abstract class Sharp {
      *
      * @param svgData the text containing SVG XML data.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadString(final String svgData)
-            throws SvgParseException {
+    public static Sharp loadString(final String svgData) {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return new ByteArrayInputStream(svgData.getBytes());
@@ -185,15 +184,28 @@ public abstract class Sharp {
      * @param resources the Android context resources.
      * @param resId     the ID of the raw resource SVG.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
     public static Sharp loadResource(final Resources resources,
-                                     final int resId)
-            throws SvgParseException {
+                                     final int resId) {
         return new Sharp() {
             protected InputStream getInputStream() {
-                return resources.openRawResource(resId);
+                InputStream inputStream = resources.openRawResource(resId);
+                if (Looper.myLooper() != Looper.getMainLooper()) {
+                    // Read the contents of the resource if we're not on the main thread
+                    StringBuilder svgData = new StringBuilder();
+                    Scanner scanner = new Scanner(inputStream);
+                    String lineSeparator = System.getProperty("line.separator");
+                    try {
+                        while (scanner.hasNextLine()) {
+                            svgData.append(scanner.nextLine()).append(lineSeparator);
+                        }
+                    } finally {
+                        scanner.close();
+                    }
+                    inputStream = new ByteArrayInputStream(svgData.toString().getBytes());
+                }
+                return inputStream;
             }
 
             @Override
@@ -208,13 +220,12 @@ public abstract class Sharp {
      * @param assetMngr the Android asset manager.
      * @param svgPath   the path to the SVG file in the application's assets.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
-     * @throws IOException       if there was a problem reading the file.
+     * @throws IOException if there was a problem reading the file.
      */
     @SuppressWarnings("unused")
     public static Sharp loadAsset(final AssetManager assetMngr,
                                   final String svgPath)
-            throws SvgParseException, IOException {
+            throws IOException {
         return new Sharp() {
             @Override
             protected void close(InputStream inputStream) throws IOException {
@@ -222,6 +233,7 @@ public abstract class Sharp {
             }
 
             protected InputStream getInputStream() throws IOException {
+                // FIXME do we need the same thread-safe solution as loadResource()?
                 return assetMngr.open(svgPath);
             }
         };
@@ -232,11 +244,9 @@ public abstract class Sharp {
      *
      * @param imageFile the input stream, with SVG XML data in UTF-8 character encoding.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadFile(final File imageFile)
-            throws SvgParseException {
+    public static Sharp loadFile(final File imageFile) {
         return new Sharp() {
             private FileInputStream mFis;
 
@@ -264,11 +274,10 @@ public abstract class Sharp {
         return doPath(pathString);
     }
 
-    private Sharp() throws SvgParseException {
+    private Sharp() {
         //Log.d(TAG, "Parsing SVG...");
         sAssumedUnit = null;
-        final Picture picture = new Picture();
-        mSvgHandler = new SvgHandler(this, picture);
+        mSvgHandler = new SvgHandler(this);
     }
 
     private AssetManager getAssetManager() {
@@ -342,6 +351,7 @@ public abstract class Sharp {
 
     @SuppressWarnings("unused")
     public void into(View view) {
+        // FIXME this must be executed on the main thread
         if (view instanceof ImageView) {
             ((ImageView) view).setImageDrawable(getDrawable(view));
         } else {
@@ -352,6 +362,7 @@ public abstract class Sharp {
     @SuppressWarnings("unused, deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void intoBackground(View view) {
+        // FIXME this must be executed on the main thread
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             view.setBackgroundDrawable(getDrawable(view));
         } else {
@@ -359,20 +370,37 @@ public abstract class Sharp {
         }
     }
 
+    /**
+     * Processes the SVG and provides the resulting drawable. Runs on the main thread.
+     *
+     * @param view
+     * @return
+     */
     @SuppressWarnings("unused")
     public SharpDrawable getDrawable(View view) {
-        // FIXME this runs on the main thread and may be slow
         return getSharpPicture().getDrawable(view);
     }
 
+    /**
+     * Processes the SVG and provides the resulting drawable. Runs in a background thread.
+     *
+     * @param view
+     * @return
+     */
     @SuppressWarnings("unused")
-    public SharpPicture getSharpPicture() {
-        InputStream inputStream = null;
+    public void getDrawable(final View view, final DrawableCallback callback) {
+        getSharpPicture(new PictureCallback() {
+            @Override
+            public void onPictureReady(SharpPicture sharpPicture) {
+                SharpDrawable drawable = sharpPicture.getDrawable(view);
+                callback.onDrawableReady(drawable);
+            }
+        });
+    }
+
+    private SharpPicture getSharpPicture(InputStream inputStream) throws SvgParseException {
         try {
-            inputStream = getInputStream();
             mSvgHandler.read(inputStream);
-        } catch (IOException e) {
-            throw new SvgParseException(e);
         } finally {
             try {
                 close(inputStream);
@@ -386,6 +414,50 @@ public abstract class Sharp {
             result.setLimits(mSvgHandler.mLimits);
         }
         return result;
+    }
+
+    @SuppressWarnings("unused")
+    public SharpPicture getSharpPicture() throws SvgParseException {
+        InputStream inputStream = null;
+        try {
+            inputStream = getInputStream();
+            return getSharpPicture(inputStream);
+        } catch (IOException e) {
+            throw new SvgParseException(e);
+        } finally {
+            try {
+                close(inputStream);
+            } catch (IOException e) {
+                throw new SvgParseException(e);
+            }
+        }
+    }
+
+    public void getSharpPicture(final PictureCallback callback) {
+        InputStream inputStream = null;
+        try {
+            inputStream = getInputStream();
+            final InputStream is = inputStream;
+            new AsyncTask<Void, Void, SharpPicture>() {
+                @Override
+                protected SharpPicture doInBackground(Void... params) {
+                    return getSharpPicture(is);
+                }
+
+                @Override
+                protected void onPostExecute(SharpPicture sharpPicture) {
+                    callback.onPictureReady(sharpPicture);
+                }
+            }.execute();
+        } catch (IOException e) {
+            throw new SvgParseException(e);
+        } finally {
+            try {
+                close(inputStream);
+            } catch (IOException e) {
+                throw new SvgParseException(e);
+            }
+        }
     }
 
     private static NumberParse parseNumbers(String s) {
@@ -1182,7 +1254,7 @@ public abstract class Sharp {
     public static class SvgHandler extends DefaultHandler {
 
         private final Sharp mSharp;
-        private final Picture mPicture;
+        private Picture mPicture;
         private Canvas mCanvas;
         private Paint mStrokePaint;
         private boolean mStrokeSet = false;
@@ -1213,9 +1285,8 @@ public abstract class Sharp {
         private boolean mReadingDefs = false;
         private Stack<String> mReadIgnoreStack = new Stack<>();
 
-        private SvgHandler(Sharp sharp, Picture picture) {
+        private SvgHandler(Sharp sharp) {
             mSharp = sharp;
-            mPicture = picture;
         }
 
         public boolean isWhiteMode() {
@@ -1247,6 +1318,7 @@ public abstract class Sharp {
         }
 
         public void read(InputStream in) {
+            mPicture = new Picture();
             try {
                 long start = System.currentTimeMillis();
                 if (in.markSupported()) {
@@ -1632,7 +1704,6 @@ public abstract class Sharp {
                 // Ignore
                 return;
             }
-
             String id = getStringAttr("id", atts);
 
             // Reset paint opacity
@@ -1715,7 +1786,7 @@ public abstract class Sharp {
             } else if (localName.equals("g")) {
                 Properties props = new Properties(atts);
                 // Check to see if this is the "bounds" layer
-                if ("bounds".equalsIgnoreCase(getStringAttr("id", atts))) {
+                if ("bounds".equalsIgnoreCase(id)) {
                     boundsMode = true;
                 }
                 if (hidden) {
@@ -2291,6 +2362,18 @@ public abstract class Sharp {
         if (!sAssumedUnit.equals(unit)) {
             throw new IllegalStateException("Mixing units; SVG contains both " + sAssumedUnit + " and " + unit);
         }
+    }
+
+    public interface DrawableCallback {
+
+        void onDrawableReady(SharpDrawable sharpDrawable);
+
+    }
+
+    public interface PictureCallback {
+
+        void onPictureReady(SharpPicture sharpPicture);
+
     }
 
 }
