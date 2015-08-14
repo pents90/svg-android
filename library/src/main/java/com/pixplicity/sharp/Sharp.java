@@ -2178,6 +2178,8 @@ public abstract class Sharp {
 
             public SvgText(Attributes atts, SvgText parentText) {
                 id = getStringAttr("id", atts);
+                // FIXME x may also be a comma- or space-separated list of coordinates; see:
+                // http://www.w3.org/TR/SVG/text.html#TSpanElementXAttribute
                 x = getFloatAttr("x", atts, 0f);
                 y = getFloatAttr("y", atts, 0f);
                 text = null;
