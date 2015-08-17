@@ -227,7 +227,6 @@ public abstract class Sharp {
      * @param assetMngr the Android asset manager.
      * @param svgPath   the path to the SVG file in the application's assets.
      * @return the parsed SVG.
-     * @throws IOException if there was a problem reading the file.
      */
     @SuppressWarnings("unused")
     public static Sharp loadAsset(final AssetManager assetMngr,
@@ -334,8 +333,6 @@ public abstract class Sharp {
     /**
      * Sets all stroke and fill colors to white.
      *
-     * @param whiteMode
-     * @return
      * @deprecated This method will be removed in a future release. It's recommended to register an
      * {@link OnSvgElementListener} to modify the paint.
      */
@@ -347,7 +344,6 @@ public abstract class Sharp {
     }
 
     /**
-     * @return
      * @deprecated See notes in {@link #setWhiteMode(boolean)}.
      */
     @SuppressWarnings("unused")
@@ -415,9 +411,6 @@ public abstract class Sharp {
 
     /**
      * Processes the SVG and provides the resulting drawable. Runs on the main thread.
-     *
-     * @param view
-     * @return
      */
     @SuppressWarnings("unused")
     public SharpDrawable getDrawable(View view) {
@@ -426,9 +419,6 @@ public abstract class Sharp {
 
     /**
      * Processes the SVG and provides the resulting drawable. Runs in a background thread.
-     *
-     * @param view
-     * @return
      */
     @SuppressWarnings("unused")
     public void getDrawable(final View view, final DrawableCallback callback) {
@@ -954,7 +944,8 @@ public abstract class Sharp {
     private static final Matrix arcMatrix = new Matrix();
     private static final Matrix arcMatrix2 = new Matrix();
 
-    private static void drawArc(Path p, float lastX, float lastY, float x, float y, float rx, float ry, float theta, int largeArc, int sweepArc) {
+    private static void drawArc(Path p, float lastX, float lastY, float x, float y,
+                                float rx, float ry, float theta, int largeArc, int sweepArc) {
         //Log.d("drawArc", "from (" + lastX + "," + lastY + ") to (" + x + ","+ y + ") r=(" + rx + "," + ry + ") theta=" + theta + " flags="+ largeArc + "," + sweepArc);
 
         // http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
@@ -1874,7 +1865,6 @@ public abstract class Sharp {
                 mFillSetStack.push(mFillSet);
                 mStrokeSetStack.push(mStrokeSet);
 
-                mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
                 doFill(props, null);
                 doStroke(props);
 
@@ -2142,7 +2132,6 @@ public abstract class Sharp {
                     mFillSet = mFillSetStack.pop();
                     mStrokePaint = mStrokePaintStack.pop();
                     mStrokeSet = mStrokeSetStack.pop();
-                    mTextStack.pop();
 
                     // Restore the previous canvas
                     mCanvas.restore();
@@ -2176,29 +2165,43 @@ public abstract class Sharp {
             private final static int TOP = 2;
 
             private final String id;
+            private final float x, y;
+            private float xOffset, yOffset;
+            private final String[] xCoords;
             private TextPaint stroke = null, fill = null;
-            private float x, y;
             private String text;
             private int hAlign = LEFT, vAlign = BOTTOM;
             private RectF bounds = new RectF();
 
             public SvgText(Attributes atts, SvgText parentText) {
                 id = getStringAttr("id", atts);
-                // FIXME x may also be a comma- or space-separated list of coordinates; see:
-                // http://www.w3.org/TR/SVG/text.html#TSpanElementXAttribute
-                x = getFloatAttr("x", atts, 0f);
-                y = getFloatAttr("y", atts, 0f);
+                String xStr = getStringAttr("x", atts);
+                if (xStr != null && (xStr.contains(",") || xStr.contains(" "))) {
+                    // x is a comma- or space-separated list of coordinates; see:
+                    // http://www.w3.org/TR/SVG/text.html#TSpanElementXAttribute
+                    x = parentText != null ? parentText.x : 0f;
+                    xCoords = xStr.split("[, ]");
+                } else {
+                    // x is a single coordinate
+                    x = parseFloat(xStr, parentText != null ? parentText.x : 0f);
+                    xCoords = parentText != null ? parentText.xCoords : null;
+                }
+                y = getFloatAttr("y", atts, parentText != null ? parentText.y : 0f);
                 text = null;
 
                 Properties props = new Properties(atts);
                 if (doFill(props, null)) {
-                    fill = new TextPaint(parentText != null ? parentText.fill : mFillPaint);
+                    fill = new TextPaint(parentText != null && parentText.fill != null
+                            ? parentText.fill
+                            : mFillPaint);
                     // Fix for https://code.google.com/p/android/issues/detail?id=39755
                     fill.setLinearText(true);
                     doText(atts, props, fill);
                 }
                 if (doStroke(props)) {
-                    stroke = new TextPaint(parentText != null ? parentText.stroke : mStrokePaint);
+                    stroke = new TextPaint(parentText != null && parentText.stroke != null
+                            ? parentText.stroke
+                            : mStrokePaint);
                     // Fix for https://code.google.com/p/android/issues/detail?id=39755
                     stroke.setLinearText(true);
                     doText(atts, props, stroke);
@@ -2242,9 +2245,14 @@ public abstract class Sharp {
                 if (null != sTextDynamic && sTextDynamic.containsKey(text)) {
                     text = sTextDynamic.get(text);
                 }
+            }
 
+            public void render(Canvas canvas) {
+                if (text == null) {
+                    // Nothing to draw
+                    return;
+                }
                 // Correct vertical alignment
-                // FIXME can we just use the textSize instead?
                 Rect bounds = new Rect();
                 Paint paint = stroke == null ? fill : stroke;
                 paint.getTextBounds(text, 0, text.length(), bounds);
@@ -2252,10 +2260,10 @@ public abstract class Sharp {
                     //Log.d(TAG, "Adjusting y=" + y + " for boundaries=" + bounds);
                     switch (vAlign) {
                         case TOP:
-                            y += bounds.height();
+                            yOffset = bounds.height();
                             break;
                         case MIDDLE:
-                            y += -bounds.centerY();
+                            yOffset = -bounds.centerY();
                             break;
                         case BOTTOM:
                             // Default; no correction needed
@@ -2270,16 +2278,14 @@ public abstract class Sharp {
                             // Default; no correction needed
                             break;
                         case CENTER:
-                            x -= width / 2f;
+                            xOffset = -width / 2f;
                             break;
                         case RIGHT:
-                            x -= width;
+                            xOffset = -width;
                     }
                 }
                 this.bounds.set(x, y, x + width, y + bounds.height());
-            }
 
-            public void render(Canvas canvas) {
                 //Log.i(TAG, "Drawing: " + text + " " + x + "," + y);
                 if (text != null) {
                     if (fill != null) {
@@ -2293,9 +2299,42 @@ public abstract class Sharp {
 
             private void drawText(Canvas canvas, SvgText text, boolean fill) {
                 TextPaint paint = fill ? text.fill : text.stroke;
-                SvgText text2 = onSvgElement(id, this, bounds, paint);
-                if (text2 != null) {
-                    canvas.drawText(text2.text, x, y, paint);
+                text = onSvgElement(id, text, text.bounds, paint);
+                if (text != null) {
+                    if (text.xCoords != null && text.xCoords.length > 0) {
+                        // Draw each glyph separately according to their x coordinates
+                        int i = 0;
+                        Float thisX = parseFloat(text.xCoords[0], null);
+                        Float nextX = 0f;
+                        if (thisX != null) {
+                            float x = thisX;
+                            for (i = 0; i < text.text.length(); i++) {
+                                if (i >= text.xCoords.length) {
+                                    // Break early so we can draw the rest of the characters in one go
+                                    i--;
+                                    break;
+                                }
+                                if (i + 1 < text.xCoords.length) {
+                                    nextX = parseFloat(text.xCoords[i + 1], null);
+                                    if (nextX == null) {
+                                        // Break early so we can draw the rest of the characters in one go
+                                        i--;
+                                        break;
+                                    }
+                                }
+                                // Draw the glyph
+                                String s = new String(new char[]{text.text.charAt(i)});
+                                canvas.drawText(s, x + text.xOffset, text.y + text.yOffset, paint);
+                                x = nextX;
+                            }
+                        }
+                        if (i < text.text.length()) {
+                            canvas.drawText(text.text.substring(i), x + text.xOffset, text.y + text.yOffset, paint);
+                        }
+                    } else {
+                        // Draw the entire string
+                        canvas.drawText(text.text, text.x + text.xOffset, text.y + text.yOffset, paint);
+                    }
                     onSvgElementDrawn(text.id, text);
                 }
             }
