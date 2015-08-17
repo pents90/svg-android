@@ -294,22 +294,26 @@ public abstract class Sharp {
         return mAssetManager;
     }
 
+    @SuppressWarnings("unused")
     public Sharp setOnElementListener(OnSvgElementListener onElementListener) {
         mOnElementListener = onElementListener;
         return this;
     }
 
+    @SuppressWarnings("unused")
     public Sharp setIdToColor(HashMap<String, Integer> idToColor) {
         mIdToColor = idToColor;
         return this;
     }
 
+    @SuppressWarnings("unused")
     public Sharp addColorReplacement(Integer searchColor, Integer replaceColor) {
         mSearchColor = searchColor;
         mReplaceColor = replaceColor;
         return this;
     }
 
+    @SuppressWarnings("unused")
     public int getReplacementColor(int color) {
         if (mSearchColor != null && mSearchColor == color) {
             return mReplaceColor;
@@ -317,6 +321,7 @@ public abstract class Sharp {
         return color;
     }
 
+    @SuppressWarnings("unused")
     public int getColorForId(String id, int color) {
         if (mIdToColor != null) {
             if (id.length() != 0 && mIdToColor.containsKey(id)) {
@@ -334,6 +339,7 @@ public abstract class Sharp {
      * @deprecated This method will be removed in a future release. It's recommended to register an
      * {@link OnSvgElementListener} to modify the paint.
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public Sharp setWhiteMode(boolean whiteMode) {
         mWhiteMode = whiteMode;
@@ -344,6 +350,7 @@ public abstract class Sharp {
      * @return
      * @deprecated See notes in {@link #setWhiteMode(boolean)}.
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public boolean isWhiteMode() {
         return mWhiteMode;
@@ -892,7 +899,7 @@ public abstract class Sharp {
                 }
                 case 'T':
                 case 't': {
-                    // TODO Shorthand quadratic Bézier (two parameters)
+                    // Shorthand quadratic Bézier (two parameters)
                     wasCurve = true;
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
@@ -2073,7 +2080,6 @@ public abstract class Sharp {
 
         @Override
         public void characters(char ch[], int start, int length) {
-            // no-op
             if (!mTextStack.isEmpty()) {
                 mTextStack.peek().setText(ch, start, length);
             }
@@ -2239,17 +2245,17 @@ public abstract class Sharp {
 
                 // Correct vertical alignment
                 // FIXME can we just use the textSize instead?
-                Rect bnds = new Rect();
+                Rect bounds = new Rect();
                 Paint paint = stroke == null ? fill : stroke;
-                paint.getTextBounds(text, 0, text.length(), bnds);
+                paint.getTextBounds(text, 0, text.length(), bounds);
                 if (vAlign != BOTTOM) {
-                    //Log.d(TAG, "Adjusting y=" + y + " for boundaries=" + bnds);
+                    //Log.d(TAG, "Adjusting y=" + y + " for boundaries=" + bounds);
                     switch (vAlign) {
                         case TOP:
-                            y += bnds.height();
+                            y += bounds.height();
                             break;
                         case MIDDLE:
-                            y += -bnds.centerY();
+                            y += -bounds.centerY();
                             break;
                         case BOTTOM:
                             // Default; no correction needed
@@ -2270,13 +2276,12 @@ public abstract class Sharp {
                             x -= width;
                     }
                 }
-                bounds.set(x, y, x + width, y + bnds.height());
+                this.bounds.set(x, y, x + width, y + bounds.height());
             }
 
             public void render(Canvas canvas) {
                 //Log.i(TAG, "Drawing: " + text + " " + x + "," + y);
                 if (text != null) {
-                    // FIXME compute bounds of text
                     if (fill != null) {
                         drawText(canvas, this, true);
                     }
