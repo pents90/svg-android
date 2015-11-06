@@ -3,8 +3,8 @@ package com.larvalabs.androidify.wallpaper;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 
-import com.larvalabs.svgandroid.BoundedPicture;
-import com.larvalabs.svgandroid.Sharp;
+import com.pixplicity.sharp.Sharp;
+import com.pixplicity.sharp.SharpPicture;
 
 import java.io.IOException;
 import java.util.*;
@@ -53,8 +53,9 @@ public class AssetDatabase {
 
     /**
      * Construct a new asset database.
+     *
      * @param assetManager the Android application asset manager.
-     * @param resources the Android application resources database.
+     * @param resources    the Android application resources database.
      */
     public AssetDatabase(AssetManager assetManager, Resources resources) {
         this.assetManager = assetManager;
@@ -68,47 +69,49 @@ public class AssetDatabase {
 
     /**
      * Scans and builds lists of all available assets, by type.
+     *
      * @throws IOException if something goes wrong with the filesystem during the scan.
      */
     private void scanAssets() throws IOException {
         if (hairAssets == null) {
-            hairAssets = new ArrayList<String>(loadElements(ASSET_HAIR));
+            hairAssets = new ArrayList<>(loadElements(ASSET_HAIR));
             Collections.sort(hairAssets);
         }
         if (shirtAssets == null) {
-            shirtAssets = new ArrayList<String>(loadElements(ASSET_SHIRT));
+            shirtAssets = new ArrayList<>(loadElements(ASSET_SHIRT));
             Collections.sort(shirtAssets);
         }
         if (pantsAssets == null) {
-            pantsAssets = new ArrayList<String>(loadElements(ASSET_PANTS));
+            pantsAssets = new ArrayList<>(loadElements(ASSET_PANTS));
             Collections.sort(pantsAssets);
         }
         if (shoeAssets == null) {
-            shoeAssets = new ArrayList<String>(loadElements(ASSET_SHOES));
+            shoeAssets = new ArrayList<>(loadElements(ASSET_SHOES));
             Collections.sort(shoeAssets);
         }
         if (glassesAssets == null) {
-            glassesAssets = new ArrayList<String>(loadElements(ASSET_GLASSES));
+            glassesAssets = new ArrayList<>(loadElements(ASSET_GLASSES));
             Collections.sort(glassesAssets);
         }
         if (beardAssets == null) {
-            beardAssets = new ArrayList<String>(loadElements(ASSET_BEARD));
+            beardAssets = new ArrayList<>(loadElements(ASSET_BEARD));
             Collections.sort(beardAssets);
         }
         if (accessoryAssets == null) {
-            accessoryAssets = new ArrayList<Accessory>(loadAccessories(ASSET_ACCESSORIES));
+            accessoryAssets = new ArrayList<>(loadAccessories(ASSET_ACCESSORIES));
             Collections.sort(accessoryAssets);
         }
     }
 
     /**
      * Builds up a list of accessories.
+     *
      * @param path where to scan for accessories on the filesystem.
      * @return the set of accessories.
      * @throws IOException if something goes wrong with the filesystem during the scan.
      */
     private HashSet<Accessory> loadAccessories(String path) throws IOException {
-        HashSet<Accessory> elements = new HashSet<Accessory>();
+        HashSet<Accessory> elements = new HashSet<>();
         String[] files = assetManager.list(path);
         int idx = 0;
         for (String file : files) {
@@ -134,12 +137,13 @@ public class AssetDatabase {
 
     /**
      * Load a list of assets of a type.
+     *
      * @param path the path containing the assets.
      * @return a list of the asset names.
      * @throws IOException if something goes wrong with the filesystem during the scan.
      */
     private HashSet<String> loadElements(String path) throws IOException {
-        HashSet<String> elements = new HashSet<String>();
+        HashSet<String> elements = new HashSet<>();
         String[] files = assetManager.list(path);
         for (String file : files) {
             int breakIndex = file.lastIndexOf('_');
@@ -161,24 +165,32 @@ public class AssetDatabase {
      * @param path the path to load the SVG file.
      * @param name the name of the SVG file.
      * @param suffix the suffix, if necessary (ie. hair has _top and _back SVG layers).
-     * @param searchColor optionally a color to replace.
-     * @param replaceColor the replacement color.
      * @return the parsed SVG object.
      */
-    public BoundedPicture getSVGForAsset(String path, String name, String suffix, Integer searchColor, Integer replaceColor) {
+    public SharpPicture getSVGForAsset(String path, String name, String suffix) {
+        return getSVGForAsset(path, name, suffix, null, null);
+    }
+
+    /**
+     * Loads an SVG file for a given asset.
+     *
+     * @param path   the path to load the SVG file.
+     * @param name   the name of the SVG file.
+     * @param suffix the suffix, if necessary (ie. hair has _top and _back SVG layers).
+     * @return the parsed SVG object.
+     */
+    public SharpPicture getSVGForAsset(String path, String name, String suffix, Integer searchColor, Integer replaceColor) {
         String file = path + "/" + name;
         if (suffix != null) {
             file += "_" + suffix;
         }
         file += ".svg";
         try {
-            if (searchColor == null) {
-                return Sharp.parseFromAsset(assetManager, file)
-                        .getBoundedPicture();
-            } else { 
-                return Sharp.parseFromAsset(assetManager, file, searchColor, replaceColor)
-                        .getBoundedPicture();
+            Sharp sharp = Sharp.loadAsset(assetManager, file);
+            if (searchColor != null) {
+                sharp.addColorReplacement(searchColor, replaceColor);
             }
+            return sharp.getSharpPicture();
         } catch (IOException fne) {
             // ignore, requested file is just not present or valid
             return null;
@@ -189,22 +201,11 @@ public class AssetDatabase {
     }
 
     /**
-     * Loads an SVG file for a given asset.
-     * @param path the path to load the SVG file.
-     * @param name the name of the SVG file.
-     * @param suffix the suffix, if necessary (ie. hair has _top and _back SVG layers).
-     * @return the parsed SVG object.
-     */
-    public BoundedPicture getSVGForAsset(String path, String name, String suffix) {
-        return getSVGForAsset(path, name, suffix, null, null);
-    }
-
-    /**
      * Loads an SVG file for a given resource.
      * @param resource the resource ID.
      * @return the parsed SVG object.
      */
-    public BoundedPicture getSVGForResource(int resource) {
+    public SharpPicture getSVGForResource(int resource) {
         return getSVGForResource(resource, null, null);
     }
 
@@ -215,15 +216,13 @@ public class AssetDatabase {
      * @param searchColor optionally a color to replace.
      * @param replaceColor the replacement color.
      */
-    public BoundedPicture getSVGForResource(int resource, Integer searchColor, Integer replaceColor) {
+    public SharpPicture getSVGForResource(int resource, Integer searchColor, Integer replaceColor) {
         try {
-            if (searchColor == null) {
-                return Sharp.loadResource(resources, resource)
-                        .getBoundedPicture();
-            } else {
-                return Sharp.loadResource(resources, resource, searchColor, replaceColor)
-                        .getBoundedPicture();
+            Sharp sharp = Sharp.loadResource(resources, resource);
+            if (searchColor != null) {
+                sharp.addColorReplacement(searchColor, replaceColor);
             }
+            return sharp.getSharpPicture();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -239,10 +238,11 @@ public class AssetDatabase {
 
     /**
      * Loads the SVG for an accessory.
+     *
      * @param a the accessory.
      * @return the parsed SVG object.
      */
-    public BoundedPicture loadAccessory(Accessory a) {
+    public SharpPicture loadAccessory(Accessory a) {
         return getSVGForAsset(ASSET_ACCESSORIES, a.getName(), a.getType());
     }
 
@@ -252,6 +252,7 @@ public class AssetDatabase {
 
     /**
      * Creates a random android configuration.
+     *
      * @return the randomized android config.
      */
     public AndroidConfig getRandomConfig() {

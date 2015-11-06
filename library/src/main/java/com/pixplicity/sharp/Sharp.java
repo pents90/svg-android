@@ -1,4 +1,27 @@
-package com.larvalabs.svgandroid;
+/*
+    Copyright 2011, 2015 Pixplicity, Larva Labs LLC and Google, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+    Sharp is heavily based on prior work. It was originally forked from
+        https://github.com/pents90/svg-android
+    And changes from other forks have been consolidated:
+        https://github.com/b2renger/svg-android
+        https://github.com/mindon/svg-android
+        https://github.com/josefpavlik/svg-android
+ */
+
+package com.pixplicity.sharp;
 
 import android.annotation.TargetApi;
 import android.content.res.AssetManager;
@@ -18,8 +41,11 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Shader.TileMode;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Looper;
+import android.support.annotation.NonNull;
+import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -38,53 +64,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-/*
-   Licensed to the Apache Software Foundation (ASF) under one or more
-   contributor license agreements.  See the NOTICE file distributed with
-   this work for additional information regarding copyright ownership.
-   The ASF licenses this file to You under the Apache License, Version 2.0
-   (the "License"); you may not use this file except in compliance with
-   the License.  You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-    History:
-        original version from https://github.com/pents90/svg-android.git
-        forked 2012-11-20 by Josef Pavlik josef@pavlik.it
-        current git:
-        git@github.com:josefpavlik/svg-android.git
-        
-    changelog:
-        2012-11-20 multiple color and visibility changing, bugfixes 
-        2012-12-17 path command ARCTO implemented (function drawarc)
-        2012-12-20 gradient support for attr 'gradientUnits' and 'spreadMethod' 
-        2012-12-20 content bounding-box check enhanced 
-        2012-12-21 drawArc bugfix, color handling improvements (color by name, rgb(int,int,int) etc)
-        2012-12-27 default color bug fixed, history added
-        2013-01-03 gradient forward reference allowed
-        2013-01-03 float number parse bug fixed
-        2013-01-03 rounded rectangle supported
-        2013-01-03 named color handling enhanced, (thanks to Stephen Uhler, http://code.google.com/p/svg-android-2)
-        2013-01-03 zipped svg supported - autodetect, only if stream is seekable, works with svg in resources
-        
-    todo:
-        inherit colors and other attributes from parent group
-        split svg by layers to map<layerName. picture>
- */
 
 /**
  * Entry point for parsing SVG files for Android.
@@ -101,9 +90,11 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public abstract class Sharp {
 
-    static final String TAG = "SVGAndroid";
+    static final String TAG = Sharp.class.getSimpleName();
 
     private static String sAssumedUnit;
+    private static float sDensity = 1.0f;
+    private static HashMap<String, String> sTextDynamic = null;
 
     private final SvgHandler mSvgHandler;
 
@@ -115,6 +106,7 @@ public abstract class Sharp {
     private boolean mWhiteMode = false;
 
     private OnSvgElementListener mOnElementListener;
+    private AssetManager mAssetManager;
 
     enum Unit {
         PERCENT("%"),
@@ -144,11 +136,6 @@ public abstract class Sharp {
         }
     }
 
-    public static float sDensity = 1.0f;
-    public static AssetManager sAssets = null;
-
-    static HashMap<String, String> sTextDynamic = null;
-
     @SuppressWarnings("unused")
     public static void prepareTexts(HashMap<String, String> texts) {
         sTextDynamic = texts;
@@ -159,10 +146,9 @@ public abstract class Sharp {
      *
      * @param svgData the input stream, with SVG XML data in UTF-8 character encoding.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadInputStream(final InputStream svgData) throws SvgParseException {
+    public static Sharp loadInputStream(final InputStream svgData) {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return svgData;
@@ -175,14 +161,13 @@ public abstract class Sharp {
     }
 
     /**
-     * Parse SVG data from a string.
+     * Parse SVG data from a text.
      *
-     * @param svgData the string containing SVG XML data.
+     * @param svgData the text containing SVG XML data.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadString(final String svgData) throws SvgParseException {
+    public static Sharp loadString(final String svgData) {
         return new Sharp() {
             protected InputStream getInputStream() {
                 return new ByteArrayInputStream(svgData.getBytes());
@@ -200,13 +185,18 @@ public abstract class Sharp {
      * @param resources the Android context resources.
      * @param resId     the ID of the raw resource SVG.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadResource(final Resources resources, final int resId) throws SvgParseException {
+    public static Sharp loadResource(final Resources resources,
+                                     final int resId) {
         return new Sharp() {
             protected InputStream getInputStream() {
-                return resources.openRawResource(resId);
+                InputStream inputStream = resources.openRawResource(resId);
+                if (Looper.myLooper() != Looper.getMainLooper()) {
+                    // Read the contents of the resource if we're not on the main thread
+                    inputStream = readInputStream(inputStream);
+                }
+                return inputStream;
             }
 
             @Override
@@ -215,22 +205,40 @@ public abstract class Sharp {
         };
     }
 
+    @NonNull
+    private static InputStream readInputStream(InputStream inputStream) {
+        StringBuilder svgData = new StringBuilder();
+        Scanner scanner = new Scanner(inputStream);
+        String lineSeparator = System.getProperty("line.separator");
+        try {
+            while (scanner.hasNextLine()) {
+                svgData.append(scanner.nextLine()).append(lineSeparator);
+            }
+        } finally {
+            scanner.close();
+        }
+        inputStream = new ByteArrayInputStream(svgData.toString().getBytes());
+        return inputStream;
+    }
+
     /**
      * Parse SVG data from an Android application asset.
      *
      * @param assetMngr the Android asset manager.
      * @param svgPath   the path to the SVG file in the application's assets.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
-     * @throws IOException       if there was a problem reading the file.
      */
     @SuppressWarnings("unused")
     public static Sharp loadAsset(final AssetManager assetMngr,
-                                  final String svgPath)
-            throws SvgParseException, IOException {
+                                  final String svgPath) {
         return new Sharp() {
             protected InputStream getInputStream() throws IOException {
-                return assetMngr.open(svgPath);
+                InputStream inputStream = assetMngr.open(svgPath);
+                if (Looper.myLooper() != Looper.getMainLooper()) {
+                    // Read the contents of the resource if we're not on the main thread
+                    inputStream = readInputStream(inputStream);
+                }
+                return inputStream;
             }
 
             @Override
@@ -241,14 +249,13 @@ public abstract class Sharp {
     }
 
     /**
-     * Parse SVG data from an input stream, replacing a single color with another color.
+     * Parse SVG data from a file.
      *
      * @param imageFile the input stream, with SVG XML data in UTF-8 character encoding.
      * @return the parsed SVG.
-     * @throws SvgParseException if there is an error while parsing.
      */
     @SuppressWarnings("unused")
-    public static Sharp loadFile(final File imageFile) throws SvgParseException {
+    public static Sharp loadFile(final File imageFile) {
         return new Sharp() {
             private FileInputStream mFis;
 
@@ -276,66 +283,178 @@ public abstract class Sharp {
         return doPath(pathString);
     }
 
-    private Sharp() throws SvgParseException {
+    private Sharp() {
         //Log.d(TAG, "Parsing SVG...");
         sAssumedUnit = null;
-        final Picture picture = new Picture();
-        mSvgHandler = new SvgHandler(this, picture);
+        mSvgHandler = new SvgHandler(this);
     }
 
+    private AssetManager getAssetManager() {
+        return mAssetManager;
+    }
+
+    @SuppressWarnings("unused")
     public Sharp setOnElementListener(OnSvgElementListener onElementListener) {
         mOnElementListener = onElementListener;
         return this;
     }
 
+    @SuppressWarnings("unused")
     public Sharp setIdToColor(HashMap<String, Integer> idToColor) {
         mIdToColor = idToColor;
         return this;
     }
 
+    @SuppressWarnings("unused")
     public Sharp addColorReplacement(Integer searchColor, Integer replaceColor) {
         mSearchColor = searchColor;
         mReplaceColor = replaceColor;
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public int getReplacementColor(int color) {
+        if (mSearchColor != null && mSearchColor == color) {
+            return mReplaceColor;
+        }
+        return color;
+    }
+
+    @SuppressWarnings("unused")
+    public int getColorForId(String id, int color) {
+        if (mIdToColor != null) {
+            if (id.length() != 0 && mIdToColor.containsKey(id)) {
+                color = mIdToColor.get(id);
+            }
+        }
+        return color;
+    }
+
+    /**
+     * Sets all stroke and fill colors to white.
+     *
+     * @deprecated This method will be removed in a future release. It's recommended to register an
+     * {@link OnSvgElementListener} to modify the paint.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     public Sharp setWhiteMode(boolean whiteMode) {
         mWhiteMode = whiteMode;
         return this;
+    }
+
+    /**
+     * @deprecated See notes in {@link #setWhiteMode(boolean)}.
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
+    public boolean isWhiteMode() {
+        return mWhiteMode;
     }
 
     protected abstract InputStream getInputStream() throws IOException;
 
     protected abstract void close(InputStream inputStream) throws IOException;
 
-    public void into(View view) {
+    @SuppressWarnings("unused")
+    public Sharp withAssets(AssetManager assetManager) {
+        mAssetManager = assetManager;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public void into(final View view) {
         if (view instanceof ImageView) {
-            ((ImageView) view).setImageDrawable(getDrawable(view));
+            final SharpDrawable drawable = getDrawable(view);
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                // Set it immediately if on the main thread
+                ((ImageView) view).setImageDrawable(drawable);
+            } else {
+                // Otherwise, set it on through the view's Looper
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((ImageView) view).setImageDrawable(drawable);
+                    }
+                });
+            }
         } else {
             intoBackground(view);
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("unused, deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    private void intoBackground(View view) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            view.setBackgroundDrawable(getDrawable(view));
+    private void intoBackground(final View view) {
+        final SharpDrawable drawable = getDrawable(view);
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // Set it immediately if on the main thread
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                view.setBackgroundDrawable(drawable);
+            } else {
+                view.setBackground(drawable);
+            }
         } else {
-            view.setBackground(getDrawable(view));
+            // Otherwise, set it on through the view's Looper
+            view.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                        view.setBackgroundDrawable(drawable);
+                    } else {
+                        view.setBackground(drawable);
+                    }
+                }
+            });
         }
     }
 
-    private Drawable getDrawable(View view) {
-        // FIXME this runs on the main thread and may be slow
-        return getBoundedPicture().createDrawable(view);
+    /**
+     * Processes the SVG and provides the resulting drawable. Runs on the main thread.
+     */
+    @SuppressWarnings("unused")
+    public SharpDrawable getDrawable(View view) {
+        return getSharpPicture().getDrawable(view);
     }
 
-    public BoundedPicture getBoundedPicture() {
+    /**
+     * Processes the SVG and provides the resulting drawable. Runs in a background thread.
+     */
+    @SuppressWarnings("unused")
+    public void getDrawable(final View view, final DrawableCallback callback) {
+        getSharpPicture(new PictureCallback() {
+            @Override
+            public void onPictureReady(SharpPicture sharpPicture) {
+                SharpDrawable drawable = sharpPicture.getDrawable(view);
+                callback.onDrawableReady(drawable);
+            }
+        });
+    }
+
+    private SharpPicture getSharpPicture(InputStream inputStream) throws SvgParseException {
+        try {
+            mSvgHandler.read(inputStream);
+        } finally {
+            try {
+                close(inputStream);
+            } catch (IOException e) {
+                throw new SvgParseException(e);
+            }
+        }
+        SharpPicture result = new SharpPicture(mSvgHandler.mPicture, mSvgHandler.mBounds);
+        // Skip bounds if it was an empty pic
+        if (!Float.isInfinite(mSvgHandler.mLimits.top)) {
+            result.setLimits(mSvgHandler.mLimits);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unused")
+    public SharpPicture getSharpPicture() throws SvgParseException {
         InputStream inputStream = null;
         try {
             inputStream = getInputStream();
-            mSvgHandler.read(inputStream);
+            return getSharpPicture(inputStream);
         } catch (IOException e) {
             throw new SvgParseException(e);
         } finally {
@@ -345,12 +464,34 @@ public abstract class Sharp {
                 throw new SvgParseException(e);
             }
         }
-        BoundedPicture result = new BoundedPicture(mSvgHandler.mPicture, mSvgHandler.mBounds);
-        // Skip bounds if it was an empty pic
-        if (!Float.isInfinite(mSvgHandler.mLimits.top)) {
-            result.setLimits(mSvgHandler.mLimits);
-        }
-        return result;
+    }
+
+    public void getSharpPicture(final PictureCallback callback) {
+        new AsyncTask<Void, Void, SharpPicture>() {
+            @Override
+            protected SharpPicture doInBackground(Void... params) {
+                InputStream inputStream = null;
+                try {
+                    inputStream = getInputStream();
+                    return getSharpPicture(inputStream);
+                } catch (IOException e) {
+                    throw new SvgParseException(e);
+                } finally {
+                    try {
+                        if (inputStream != null) {
+                            close(inputStream);
+                        }
+                    } catch (IOException e) {
+                        throw new SvgParseException(e);
+                    }
+                }
+            }
+
+            @Override
+            protected void onPostExecute(SharpPicture sharpPicture) {
+                callback.onPictureReady(sharpPicture);
+            }
+        }.execute();
     }
 
     private static NumberParse parseNumbers(String s) {
@@ -556,7 +697,7 @@ public abstract class Sharp {
      * <p/>
      * Numbers are separate by whitespace, comma or nothing at all (!) if they are self-delimiting, (ie. begin with a - sign)
      *
-     * @param s the path string from the XML
+     * @param s the path text from the XML
      */
     private static Path doPath(String s) {
         int n = s.length();
@@ -600,11 +741,24 @@ public abstract class Sharp {
 
             boolean wasCurve = false;
             switch (cmd) {
+                case 'Z':
+                case 'z': {
+                    // Close path
+                    p.close();
+                    p.moveTo(subPathStartX, subPathStartY);
+                    lastX = subPathStartX;
+                    lastY = subPathStartY;
+                    lastX1 = subPathStartX;
+                    lastY1 = subPathStartY;
+                    wasCurve = true;
+                    break;
+                }
                 case 'M':
                 case 'm': {
+                    // Move
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 'm') {
+                    if (Character.isLowerCase(cmd)) {
                         subPathStartX += x;
                         subPathStartY += y;
                         p.rMoveTo(x, y);
@@ -619,25 +773,12 @@ public abstract class Sharp {
                     }
                     break;
                 }
-                case 'Z':
-                case 'z': {
-                    p.close();
-                    p.moveTo(subPathStartX, subPathStartY);
-                    lastX = subPathStartX;
-                    lastY = subPathStartY;
-                    lastX1 = subPathStartX;
-                    lastY1 = subPathStartY;
-                    wasCurve = true;
-                    break;
-                }
-                case 'T':
-                case 't':
-                    // todo - smooth quadratic Bezier (two parameters)
                 case 'L':
                 case 'l': {
+                    // Line
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 'l') {
+                    if (Character.isLowerCase(cmd)) {
                         p.rLineTo(x, y);
                         lastX += x;
                         lastY += y;
@@ -650,8 +791,9 @@ public abstract class Sharp {
                 }
                 case 'H':
                 case 'h': {
+                    // Horizontal line
                     float x = ph.nextFloat();
-                    if (cmd == 'h') {
+                    if (Character.isLowerCase(cmd)) {
                         p.rLineTo(x, 0);
                         lastX += x;
                     } else {
@@ -662,8 +804,9 @@ public abstract class Sharp {
                 }
                 case 'V':
                 case 'v': {
+                    // Vertical line
                     float y = ph.nextFloat();
-                    if (cmd == 'v') {
+                    if (Character.isLowerCase(cmd)) {
                         p.rLineTo(0, y);
                         lastY += y;
                     } else {
@@ -674,6 +817,7 @@ public abstract class Sharp {
                 }
                 case 'C':
                 case 'c': {
+                    // Cubic Bézier (six parameters)
                     wasCurve = true;
                     float x1 = ph.nextFloat();
                     float y1 = ph.nextFloat();
@@ -681,7 +825,8 @@ public abstract class Sharp {
                     float y2 = ph.nextFloat();
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
-                    if (cmd == 'c') {
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
                         x1 += lastX;
                         x2 += lastX;
                         x += lastX;
@@ -696,17 +841,16 @@ public abstract class Sharp {
                     lastY = y;
                     break;
                 }
-                case 'Q':
-                case 'q':
-                    // todo - quadratic Bezier (four parameters)
                 case 'S':
                 case 's': {
+                    // Shorthand cubic Bézier (four parameters)
                     wasCurve = true;
                     float x2 = ph.nextFloat();
                     float y2 = ph.nextFloat();
                     float x = ph.nextFloat();
                     float y = ph.nextFloat();
                     if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
                         x2 += lastX;
                         x += lastX;
                         y2 += lastY;
@@ -721,8 +865,51 @@ public abstract class Sharp {
                     lastY = y;
                     break;
                 }
+                case 'Q':
+                case 'q': {
+                    // Quadratic Bézier (four parameters)
+                    wasCurve = true;
+                    float x1 = ph.nextFloat();
+                    float y1 = ph.nextFloat();
+                    float x = ph.nextFloat();
+                    float y = ph.nextFloat();
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
+                        x1 += lastX;
+                        x += lastX;
+                        y1 += lastY;
+                        y += lastY;
+                    }
+                    p.quadTo(x1, y1, x, y);
+                    lastX1 = x1;
+                    lastY1 = y1;
+                    lastX = x;
+                    lastY = y;
+                    break;
+                }
+                case 'T':
+                case 't': {
+                    // Shorthand quadratic Bézier (two parameters)
+                    wasCurve = true;
+                    float x = ph.nextFloat();
+                    float y = ph.nextFloat();
+                    if (Character.isLowerCase(cmd)) {
+                        // Relative coordinates
+                        x += lastX;
+                        y += lastY;
+                    }
+                    float x1 = 2 * lastX - lastX1;
+                    float y1 = 2 * lastY - lastY1;
+                    p.quadTo(x1, y1, x, y);
+                    lastX1 = x1;
+                    lastY1 = y1;
+                    lastX = x;
+                    lastY = y;
+                    break;
+                }
                 case 'A':
                 case 'a': {
+                    // Elliptical arc
                     float rx = ph.nextFloat();
                     float ry = ph.nextFloat();
                     float theta = ph.nextFloat();
@@ -757,7 +944,8 @@ public abstract class Sharp {
     private static final Matrix arcMatrix = new Matrix();
     private static final Matrix arcMatrix2 = new Matrix();
 
-    private static void drawArc(Path p, float lastX, float lastY, float x, float y, float rx, float ry, float theta, int largeArc, int sweepArc) {
+    private static void drawArc(Path p, float lastX, float lastY, float x, float y,
+                                float rx, float ry, float theta, int largeArc, int sweepArc) {
         //Log.d("drawArc", "from (" + lastX + "," + lastY + ") to (" + x + ","+ y + ") r=(" + rx + "," + ry + ") theta=" + theta + " flags="+ largeArc + "," + sweepArc);
 
         // http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
@@ -905,31 +1093,29 @@ public abstract class Sharp {
         }
     }
 
-    public boolean isWhiteMode() {
-        return mWhiteMode;
-    }
-
-    public int getReplacementColor(int color) {
-        if (mSearchColor != null && mSearchColor == color) {
-            return mReplaceColor;
-        }
-        return color;
-    }
-
-    public int getColorForId(String id, int color) {
-        if (mIdToColor != null) {
-            if (id.length() != 0 && mIdToColor.containsKey(id)) {
-                color = mIdToColor.get(id);
-            }
-        }
-        return color;
-    }
-
-    private <T> T onSvgElement(String id, T p, Paint paint) {
+    private void onSvgStart(Canvas canvas, RectF bounds) {
         if (mOnElementListener != null) {
-            return mOnElementListener.onSvgElement(id, p, paint);
+            mOnElementListener.onSvgStart(canvas, bounds);
         }
-        return p;
+    }
+
+    private void onSvgEnd(Canvas canvas, RectF bounds) {
+        if (mOnElementListener != null) {
+            mOnElementListener.onSvgStart(canvas, bounds);
+        }
+    }
+
+    private <T> T onSvgElement(String id, T element, RectF elementBounds, Canvas canvas, RectF canvasBounds, Paint paint) {
+        if (mOnElementListener != null) {
+            return mOnElementListener.onSvgElement(id, element, elementBounds, canvas, canvasBounds, paint);
+        }
+        return element;
+    }
+
+    private <T> void onSvgElementDrawn(String id, T element, Canvas canvas) {
+        if (mOnElementListener != null) {
+            mOnElementListener.onSvgElementDrawn(id, element, canvas);
+        }
     }
 
     private static class NumberParse {
@@ -1103,7 +1289,7 @@ public abstract class Sharp {
     public static class SvgHandler extends DefaultHandler {
 
         private final Sharp mSharp;
-        private final Picture mPicture;
+        private Picture mPicture;
         private Canvas mCanvas;
         private Paint mStrokePaint;
         private boolean mStrokeSet = false;
@@ -1114,7 +1300,9 @@ public abstract class Sharp {
         private boolean mFillSet = false;
         private Stack<Paint> mFillPaintStack = new Stack<>();
         private Stack<Boolean> mFillSetStack = new Stack<>();
+
         // Scratch rect (so we aren't constantly making new ones)
+        private Line mLine = new Line();
         private RectF mRect = new RectF();
         private RectF mBounds = null;
         private RectF mLimits = new RectF(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
@@ -1126,13 +1314,14 @@ public abstract class Sharp {
         private Gradient mGradient = null;
 
         private final Stack<SvgText> mTextStack = new Stack<>();
+        private final Stack<SvgGroup> mGroupStack = new Stack<>();
 
         private HashMap<String, String> mDefs = new HashMap<>();
-        private boolean mDefsReading = false;
+        private boolean mReadingDefs = false;
+        private Stack<String> mReadIgnoreStack = new Stack<>();
 
-        private SvgHandler(Sharp sharp, Picture picture) {
+        private SvgHandler(Sharp sharp) {
             mSharp = sharp;
-            mPicture = picture;
         }
 
         public boolean isWhiteMode() {
@@ -1147,11 +1336,24 @@ public abstract class Sharp {
             return mSharp.getColorForId(id, color);
         }
 
-        private <T> T onSvgElement(String id, T p, Paint paint) {
-            return mSharp.onSvgElement(id, p, paint);
+        private void onSvgStart() {
+            mSharp.onSvgStart(mCanvas, mBounds);
+        }
+
+        private void onSvgEnd() {
+            mSharp.onSvgEnd(mCanvas, mBounds);
+        }
+
+        private <T> T onSvgElement(String id, T element, RectF elementBounds, Paint paint) {
+            return mSharp.onSvgElement(id, element, elementBounds, mCanvas, mBounds, paint);
+        }
+
+        private <T> void onSvgElementDrawn(String id, T element) {
+            mSharp.onSvgElementDrawn(id, element, mCanvas);
         }
 
         public void read(InputStream in) {
+            mPicture = new Picture();
             try {
                 long start = System.currentTimeMillis();
                 if (in.markSupported()) {
@@ -1271,15 +1473,18 @@ public abstract class Sharp {
             }
         }
 
-        // XXX not done yet
-        private boolean doText(Attributes atts, Paint paint) {
+        private boolean doText(Attributes atts, Properties props, Paint paint) {
             if ("none".equals(atts.getValue("display"))) {
                 return false;
             }
-            if (atts.getValue("font-size") != null) {
-                paint.setTextSize(getFloatAttr("font-size", atts, 10f));
+            Float fontSize = getFloatAttr("font-size", atts);
+            if (fontSize == null) {
+                fontSize = parseFloat(props.getString("font-size"), null);
             }
-            Typeface typeface = setTypeFace(atts);
+            if (fontSize != null) {
+                paint.setTextSize(fontSize);
+            }
+            Typeface typeface = setTypeface(atts, props, mSharp.getAssetManager(), paint.getTypeface());
             if (typeface != null) {
                 paint.setTypeface(typeface);
             }
@@ -1479,7 +1684,7 @@ public abstract class Sharp {
         private int hiddenLevel = 0;
         private boolean boundsMode = false;
 
-        private void doLimits2(float x, float y) {
+        private void doLimits(float x, float y) {
             if (x < mLimits.left) {
                 mLimits.left = x;
             }
@@ -1492,7 +1697,6 @@ public abstract class Sharp {
             if (y > mLimits.bottom) {
                 mLimits.bottom = y;
             }
-            Log.d(TAG, "new limits: " + mLimits);
         }
 
         final private RectF limitRect = new RectF();
@@ -1501,8 +1705,8 @@ public abstract class Sharp {
             Matrix m = mMatrixStack.peek();
             m.mapRect(limitRect, box);
             float width2 = (paint == null) ? 0 : mStrokePaint.getStrokeWidth() / 2;
-            doLimits2(limitRect.left - width2, limitRect.top - width2);
-            doLimits2(limitRect.right + width2, limitRect.bottom + width2);
+            doLimits(limitRect.left - width2, limitRect.top - width2);
+            doLimits(limitRect.right + width2, limitRect.bottom + width2);
         }
 
         private void doLimits(RectF box) {
@@ -1531,8 +1735,11 @@ public abstract class Sharp {
 
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+            if (!mReadIgnoreStack.empty()) {
+                // Ignore
+                return;
+            }
             String id = getStringAttr("id", atts);
-            Log.d(TAG, "element id=" + id);
 
             // Reset paint opacity
             mStrokePaint.setAlpha(255);
@@ -1593,9 +1800,9 @@ public abstract class Sharp {
                         (int) Math.ceil(mBounds.width()),
                         (int) Math.ceil(mBounds.height()));
                 //Log.d(TAG, "canvas size: " + mCanvas.getWidth() + "x" + mCanvas.getHeight());
+                onSvgStart();
             } else if (localName.equals("defs")) {
-                // Ignore
-                mDefsReading = true;
+                mReadingDefs = true;
             } else if (localName.equals("linearGradient")) {
                 mGradient = doGradient(true, atts);
             } else if (localName.equals("radialGradient")) {
@@ -1614,7 +1821,7 @@ public abstract class Sharp {
             } else if (localName.equals("g")) {
                 Properties props = new Properties(atts);
                 // Check to see if this is the "bounds" layer
-                if ("bounds".equalsIgnoreCase(getStringAttr("id", atts))) {
+                if ("bounds".equalsIgnoreCase(id)) {
                     boundsMode = true;
                 }
                 if (hidden) {
@@ -1629,6 +1836,28 @@ public abstract class Sharp {
                         //Log.d(TAG, "Hidden up: " + hiddenLevel);
                     }
                 }
+
+                // If the group has an applied opacity, start drawing in a new canvas
+                Float opacity = getFloatAttr("opacity", atts);
+                if (opacity == null) {
+                    opacity = props.getFloat("opacity");
+                }
+                if (opacity != null && opacity < 1f) {
+                    // FIXME Ideally, we should compute the bounds of the enclosed group, and create
+                    //       the layer exactly to its size; see issue #6
+                    // Apply inverse of matrix to correct for any transformations
+                    // It's okay to use getMatrix() here as we may assume its a software layer
+                    Matrix m = mCanvas.getMatrix();
+                    m.invert(m);
+                    RectF r = new RectF(0, 0, mCanvas.getWidth(), mCanvas.getHeight());
+                    m.mapRect(r);
+                    // Store the layer with the opacity value
+                    mCanvas.saveLayerAlpha(r,
+                            (int) (255 * opacity), Canvas.ALL_SAVE_FLAG);
+                } else {
+                    mCanvas.save();
+                }
+
                 pushTransform(atts);
 
                 mFillPaintStack.push(new Paint(mFillPaint));
@@ -1636,13 +1865,16 @@ public abstract class Sharp {
                 mFillSetStack.push(mFillSet);
                 mStrokeSetStack.push(mStrokeSet);
 
-                doText(atts, mFillPaint);
-                doText(atts, mStrokePaint);
                 doFill(props, null);
                 doStroke(props);
 
                 mFillSet |= (props.getString("fill") != null);
                 mStrokeSet |= (props.getString("stroke") != null);
+
+                SvgGroup group = new SvgGroup(id);
+                mGroupStack.push(group);
+                // FIXME compute bounds before drawing?
+                onSvgElement(id, group, null, null);
             } else if (!hidden2 && localName.equals("rect")) {
                 Float x = getFloatAttr("x", atts, 0f);
                 Float y = getFloatAttr("y", atts, 0f);
@@ -1673,12 +1905,20 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 mRect.set(x, y, x + width, y + height);
                 if (doFill(props, mRect)) {
-                    mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                    mRect = onSvgElement(id, mRect, mRect, mFillPaint);
+                    if (mRect != null) {
+                        mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
+                        onSvgElementDrawn(id, mRect);
+                    }
                     doLimits(mRect);
                 }
                 if (doStroke(props)) {
-                    mCanvas.drawRoundRect(mRect, rx, ry, mFillPaint);
-                    doLimits(mRect, mFillPaint);
+                    mRect = onSvgElement(id, mRect, mRect, mStrokePaint);
+                    if (mRect != null) {
+                        mCanvas.drawRoundRect(mRect, rx, ry, mStrokePaint);
+                        onSvgElementDrawn(id, mRect);
+                    }
+                    doLimits(mRect, mStrokePaint);
                 }
                 popTransform();
             } else if (!hidden2 && localName.equals("line")) {
@@ -1689,8 +1929,13 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 if (doStroke(props)) {
                     pushTransform(atts);
-                    mRect.set(x1, y1, x2, y2);
-                    mCanvas.drawLine(x1, y1, x2, y2, mStrokePaint);
+                    mLine.set(x1, y1, x2, y2);
+                    mRect.set(mLine);
+                    mLine = onSvgElement(id, mLine, mRect, mStrokePaint);
+                    if (mLine != null) {
+                        mCanvas.drawLine(mLine.left, mLine.top, mLine.right, mLine.bottom, mStrokePaint);
+                        onSvgElementDrawn(id, mLine);
+                    }
                     doLimits(mRect, mStrokePaint);
                     popTransform();
                 }
@@ -1711,11 +1956,19 @@ public abstract class Sharp {
                     Properties props = new Properties(atts);
                     mRect.set(centerX - radiusX, centerY - radiusY, centerX + radiusX, centerY + radiusY);
                     if (doFill(props, mRect)) {
-                        mCanvas.drawOval(mRect, mFillPaint);
+                        mRect = onSvgElement(id, mRect, mRect, mFillPaint);
+                        if (mRect != null) {
+                            mCanvas.drawOval(mRect, mFillPaint);
+                            onSvgElementDrawn(id, mRect);
+                        }
                         doLimits(mRect);
                     }
                     if (doStroke(props)) {
-                        mCanvas.drawOval(mRect, mStrokePaint);
+                        mRect = onSvgElement(id, mRect, mRect, mStrokePaint);
+                        if (mRect != null) {
+                            mCanvas.drawOval(mRect, mStrokePaint);
+                            onSvgElementDrawn(id, mRect);
+                        }
                         doLimits(mRect, mStrokePaint);
                     }
                     popTransform();
@@ -1740,11 +1993,19 @@ public abstract class Sharp {
                         }
                         p.computeBounds(mRect, false);
                         if (doFill(props, mRect)) {
-                            mCanvas.drawPath(p, mFillPaint);
+                            p = onSvgElement(id, p, mRect, mFillPaint);
+                            if (p != null) {
+                                mCanvas.drawPath(p, mFillPaint);
+                                onSvgElementDrawn(id, p);
+                            }
                             doLimits(mRect);
                         }
                         if (doStroke(props)) {
-                            mCanvas.drawPath(p, mStrokePaint);
+                            p = onSvgElement(id, p, mRect, mStrokePaint);
+                            if (p != null) {
+                                mCanvas.drawPath(p, mStrokePaint);
+                                onSvgElementDrawn(id, p);
+                            }
                             doLimits(mRect, mStrokePaint);
                         }
                         popTransform();
@@ -1753,7 +2014,7 @@ public abstract class Sharp {
             } else if (!hidden2 && localName.equals("path")) {
                 String d = getStringAttr("d", atts);
 
-                if (mDefsReading) {
+                if (mReadingDefs) {
                     mDefs.put(id, getStringAttr("d", atts));
                     return;
                 } else if (null == d) {
@@ -1773,37 +2034,42 @@ public abstract class Sharp {
                 Properties props = new Properties(atts);
                 p.computeBounds(mRect, false);
                 if (doFill(props, mRect)) {
-                    p = onSvgElement(id, p, mFillPaint);
-                    mCanvas.drawPath(p, mFillPaint);
+                    p = onSvgElement(id, p, mRect, mFillPaint);
+                    if (p != null) {
+                        mCanvas.drawPath(p, mFillPaint);
+                        onSvgElementDrawn(id, p);
+                    }
                     doLimits(mRect);
                 }
                 if (doStroke(props)) {
-                    p = onSvgElement(id, p, mStrokePaint);
-                    mCanvas.drawPath(p, mStrokePaint);
+                    p = onSvgElement(id, p, mRect, mStrokePaint);
+                    if (p != null) {
+                        mCanvas.drawPath(p, mStrokePaint);
+                        onSvgElementDrawn(id, p);
+                    }
                     doLimits(mRect, mStrokePaint);
                 }
                 popTransform();
             } else if (!hidden2 && localName.equals("text")) {
-                if (mTextStack.isEmpty()) {
-                    pushTransform(atts);
-                    mTextStack.push(new SvgText(atts));
-                } else {
-                    Log.w(TAG, "Cannot process <text> tag nested inside another <text> tag");
-                }
+                pushTransform(atts);
+                mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
             } else if (!hidden2 && localName.equals("tspan")) {
-                if (!mTextStack.isEmpty()) {
-                    mTextStack.push(new SvgText(atts));
-                } else {
-                    Log.w(TAG, "Cannot process <tspan> tag outside of <text> tag");
-                }
+                mTextStack.push(new SvgText(atts, mTextStack.isEmpty() ? null : mTextStack.peek()));
             } else if (!hidden2) {
-                Log.d(TAG, "Unrecognized SVG command: " + localName);
+                switch (localName) {
+                    case "metadata":
+                        // Ignore, including children
+                        mReadIgnoreStack.push(localName);
+                        break;
+                    default:
+                        Log.d(TAG, "Unrecognized SVG command: " + localName);
+                        break;
+                }
             }
         }
 
         @Override
         public void characters(char ch[], int start, int length) {
-            // no-op
             if (!mTextStack.isEmpty()) {
                 mTextStack.peek().setText(ch, start, length);
             }
@@ -1812,15 +2078,23 @@ public abstract class Sharp {
         @Override
         public void endElement(String namespaceURI, String localName, String qName)
                 throws SAXException {
+            if (!mReadIgnoreStack.empty() && localName.equals(mReadIgnoreStack.peek())) {
+                // Ignore
+                mReadIgnoreStack.pop();
+                return;
+            }
             switch (localName) {
                 case "svg":
+                    onSvgEnd();
                     mPicture.endRecording();
                     break;
                 case "text":
                 case "tspan":
                     if (!mTextStack.isEmpty()) {
                         SvgText text = mTextStack.pop();
-                        text.render(mCanvas);
+                        if (text != null) {
+                            text.render(mCanvas);
+                        }
                     }
                     if (localName.equals("text")) {
                         popTransform();
@@ -1834,9 +2108,12 @@ public abstract class Sharp {
                     break;
                 case "defs":
                     finishGradients();
-                    mDefsReading = false;
+                    mReadingDefs = false;
                     break;
                 case "g":
+                    SvgGroup group = mGroupStack.pop();
+                    onSvgElementDrawn(group.id, group);
+
                     if (boundsMode) {
                         boundsMode = false;
                     }
@@ -1855,71 +2132,210 @@ public abstract class Sharp {
                     mFillSet = mFillSetStack.pop();
                     mStrokePaint = mStrokePaintStack.pop();
                     mStrokeSet = mStrokeSetStack.pop();
+
+                    // Restore the previous canvas
+                    mCanvas.restore();
                     break;
             }
         }
 
-        // class to hold text properties
-        private class SvgText {
+
+        public class SvgGroup {
+
+            private final String id;
+
+            public SvgGroup(String id) {
+                this.id = id;
+            }
+
+        }
+
+
+        /**
+         * Holds text properties as these are only applied with the end tag is encountered.
+         */
+        public class SvgText {
+
+            private final static int LEFT = 0;
+            private final static int CENTER = 1;
+            private final static int RIGHT = 2;
+
+            private final static int BOTTOM = 0;
             private final static int MIDDLE = 1;
             private final static int TOP = 2;
-            private Paint stroke = null, fill = null;
-            private float x, y;
-            private String svgText;
-            private int vAlign = 0;
 
-            public SvgText(Attributes atts) {
-                x = getFloatAttr("x", atts, 0f);
-                y = getFloatAttr("y", atts, 0f);
-                svgText = null;
+            private final String id;
+            private final float x, y;
+            private float xOffset, yOffset;
+            private final String[] xCoords;
+            private TextPaint stroke = null, fill = null;
+            private String text;
+            private int hAlign = LEFT, vAlign = BOTTOM;
+            private RectF bounds = new RectF();
+
+            public SvgText(Attributes atts, SvgText parentText) {
+                id = getStringAttr("id", atts);
+                String xStr = getStringAttr("x", atts);
+                if (xStr != null && (xStr.contains(",") || xStr.contains(" "))) {
+                    // x is a comma- or space-separated list of coordinates; see:
+                    // http://www.w3.org/TR/SVG/text.html#TSpanElementXAttribute
+                    x = parentText != null ? parentText.x : 0f;
+                    xCoords = xStr.split("[, ]");
+                } else {
+                    // x is a single coordinate
+                    x = parseFloat(xStr, parentText != null ? parentText.x : 0f);
+                    xCoords = parentText != null ? parentText.xCoords : null;
+                }
+                y = getFloatAttr("y", atts, parentText != null ? parentText.y : 0f);
+                text = null;
 
                 Properties props = new Properties(atts);
                 if (doFill(props, null)) {
-                    fill = new Paint(mFillPaint);
-                    doText(atts, fill);
+                    fill = new TextPaint(parentText != null && parentText.fill != null
+                            ? parentText.fill
+                            : mFillPaint);
+                    // Fix for https://code.google.com/p/android/issues/detail?id=39755
+                    fill.setLinearText(true);
+                    doText(atts, props, fill);
                 }
                 if (doStroke(props)) {
-                    stroke = new Paint(mStrokePaint);
-                    doText(atts, stroke);
+                    stroke = new TextPaint(parentText != null && parentText.stroke != null
+                            ? parentText.stroke
+                            : mStrokePaint);
+                    // Fix for https://code.google.com/p/android/issues/detail?id=39755
+                    stroke.setLinearText(true);
+                    doText(atts, props, stroke);
                 }
-                // Quick hack for alignment
+                // Horizontal alignment
+                String halign = getStringAttr("text-align", atts);
+                if (halign == null) {
+                    halign = props.getString("text-align");
+                }
+                if (halign == null && parentText != null) {
+                    hAlign = parentText.hAlign;
+                } else {
+                    if ("center".equals(halign)) {
+                        hAlign = CENTER;
+                    } else if ("right".equals(halign)) {
+                        hAlign = RIGHT;
+                    }
+                }
+                // Vertical alignment
                 String valign = getStringAttr("alignment-baseline", atts);
-                if ("middle".equals(valign)) {
-                    vAlign = MIDDLE;
-                } else if ("top".equals(valign)) {
-                    vAlign = TOP;
+                if (valign == null) {
+                    valign = props.getString("alignment-baseline");
+                }
+                if (valign == null && parentText != null) {
+                    vAlign = parentText.vAlign;
+                } else {
+                    if ("middle".equals(valign)) {
+                        vAlign = MIDDLE;
+                    } else if ("top".equals(valign)) {
+                        vAlign = TOP;
+                    }
                 }
             }
 
             public void setText(char[] ch, int start, int len) {
-                if (svgText == null) {
-                    svgText = new String(ch, start, len);
+                if (text == null) {
+                    text = new String(ch, start, len);
                 } else {
-                    svgText += new String(ch, start, len);
+                    text += new String(ch, start, len);
                 }
-                if (null != sTextDynamic && sTextDynamic.containsKey(svgText)) {
-                    svgText = sTextDynamic.get(svgText);
-                }
-
-                // This is an experiment for vertical alignment
-                if (vAlign > 0) {
-                    Paint paint = stroke == null ? fill : stroke;
-                    Rect bnds = new Rect();
-                    paint.getTextBounds(svgText, 0, svgText.length(), bnds);
-                    //Log.i(TAG, "Adjusting " + y + " by " + bnds);
-                    y += (vAlign == MIDDLE) ? -bnds.centerY() : bnds.height();
+                if (null != sTextDynamic && sTextDynamic.containsKey(text)) {
+                    text = sTextDynamic.get(text);
                 }
             }
 
             public void render(Canvas canvas) {
-                //Log.i(TAG, "Drawing: " + svgText + " " + x + "," + y);
-                if (svgText != null) {
+                if (text == null) {
+                    // Nothing to draw
+                    return;
+                }
+                // Correct vertical alignment
+                Rect bounds = new Rect();
+                Paint paint = stroke == null ? fill : stroke;
+                paint.getTextBounds(text, 0, text.length(), bounds);
+                if (vAlign != BOTTOM) {
+                    //Log.d(TAG, "Adjusting y=" + y + " for boundaries=" + bounds);
+                    switch (vAlign) {
+                        case TOP:
+                            yOffset = bounds.height();
+                            break;
+                        case MIDDLE:
+                            yOffset = -bounds.centerY();
+                            break;
+                        case BOTTOM:
+                            // Default; no correction needed
+                            break;
+                    }
+                }
+                float width = paint.measureText(text);
+                // Correct horizontal alignment
+                if (hAlign != LEFT) {
+                    switch (hAlign) {
+                        case LEFT:
+                            // Default; no correction needed
+                            break;
+                        case CENTER:
+                            xOffset = -width / 2f;
+                            break;
+                        case RIGHT:
+                            xOffset = -width;
+                    }
+                }
+                this.bounds.set(x, y, x + width, y + bounds.height());
+
+                //Log.i(TAG, "Drawing: " + text + " " + x + "," + y);
+                if (text != null) {
                     if (fill != null) {
-                        canvas.drawText(svgText, x, y, fill);
+                        drawText(canvas, this, true);
                     }
                     if (stroke != null) {
-                        canvas.drawText(svgText, x, y, stroke);
+                        drawText(canvas, this, false);
                     }
+                }
+            }
+
+            private void drawText(Canvas canvas, SvgText text, boolean fill) {
+                TextPaint paint = fill ? text.fill : text.stroke;
+                text = onSvgElement(id, text, text.bounds, paint);
+                if (text != null) {
+                    if (text.xCoords != null && text.xCoords.length > 0) {
+                        // Draw each glyph separately according to their x coordinates
+                        int i = 0;
+                        Float thisX = parseFloat(text.xCoords[0], null);
+                        Float nextX = 0f;
+                        if (thisX != null) {
+                            float x = thisX;
+                            for (i = 0; i < text.text.length(); i++) {
+                                if (i >= text.xCoords.length) {
+                                    // Break early so we can draw the rest of the characters in one go
+                                    i--;
+                                    break;
+                                }
+                                if (i + 1 < text.xCoords.length) {
+                                    nextX = parseFloat(text.xCoords[i + 1], null);
+                                    if (nextX == null) {
+                                        // Break early so we can draw the rest of the characters in one go
+                                        i--;
+                                        break;
+                                    }
+                                }
+                                // Draw the glyph
+                                String s = new String(new char[]{text.text.charAt(i)});
+                                canvas.drawText(s, x + text.xOffset, text.y + text.yOffset, paint);
+                                x = nextX;
+                            }
+                        }
+                        if (i < text.text.length()) {
+                            canvas.drawText(text.text.substring(i), x + text.xOffset, text.y + text.yOffset, paint);
+                        }
+                    } else {
+                        // Draw the entire string
+                        canvas.drawText(text.text, text.x + text.xOffset, text.y + text.yOffset, paint);
+                    }
+                    onSvgElementDrawn(text.id, text);
                 }
             }
         }
@@ -1938,11 +2354,27 @@ public abstract class Sharp {
             }
         }
 
-        private Typeface setTypeFace(Attributes atts) {
-            String face = getStringAttr("font-family", atts);
+        private Typeface setTypeface(Attributes atts, Properties props, AssetManager assetManager, Typeface defaultTypeface) {
+            // Prefer a dedicated attribute
+            String family = getStringAttr("font-family", atts);
+            if (family == null) {
+                // Fall back to reading from "style" attribute
+                family = props.getString("font-family");
+            }
+            // Prefer a dedicated attribute
             String style = getStringAttr("font-style", atts);
+            if (style == null) {
+                // Fall back to reading from "style" attribute
+                style = props.getString("font-style");
+            }
+            // Prefer a dedicated attribute
             String weight = getStringAttr("font-weight", atts);
+            if (weight == null) {
+                // Fall back to reading from "style" attribute
+                weight = props.getString("font-weight");
+            }
 
+            // Set the style parameters
             int styleParam = Typeface.NORMAL;
             if ("italic".equals(style)) {
                 styleParam |= Typeface.ITALIC;
@@ -1950,16 +2382,59 @@ public abstract class Sharp {
             if ("bold".equals(weight)) {
                 styleParam |= Typeface.BOLD;
             }
-            Typeface plain = null;
-            if (null != face && null != sAssets && face.indexOf(".ttf") > 0) {
-                plain = Typeface.createFromAsset(sAssets, "fonts/" + face);
-                if (null != plain) {
-                    return Typeface.create(plain, styleParam);
+
+            Typeface plain;
+            if (family != null) {
+                // Attempt to load the typeface
+                if (assetManager != null) {
+                    Pattern pattern = Pattern.compile("'(.+?)'(?:,'(.+?)')*");
+                    Matcher matcher = pattern.matcher(family);
+                    if (matcher.matches()) {
+                        for (int i = 1; i < matcher.groupCount() + 1; i++) {
+                            if (matcher.group(i) != null) {
+                                family = matcher.group(i);
+                            }
+                        }
+                    }
+                    // Compose a filename
+                    String typefaceFile = "fonts/" + family + ".ttf";
+                    try {
+                        plain = Typeface.createFromAsset(assetManager, typefaceFile);
+                        Log.d(TAG, "loaded typeface from assets: " + typefaceFile);
+                    } catch (RuntimeException e) {
+                        boolean found = true;
+                        try {
+                            String[] fonts = assetManager.list("fonts/");
+                            found = false;
+                            for (String font : fonts) {
+                                if (typefaceFile.equals(font)) {
+                                    found = true;
+                                }
+                            }
+                        } catch (IOException e1) {
+                            Log.w(TAG, "Failed listing assets directory for /fonts", e);
+                        }
+                        if (!found) {
+                            Log.w(TAG, "Typeface is missing from assets: " + typefaceFile);
+                        } else {
+                            Log.w(TAG, "Failed to create typeface from assets: " + typefaceFile, e);
+                        }
+                        plain = null;
+                    }
+                    if (plain != null) {
+                        // Adapt the type face with the style
+                        return Typeface.create(plain, styleParam);
+                    }
+                } else {
+                    Log.w(TAG, "Typefaces can only be loaded if assets are provided; " +
+                            "invoke " + Sharp.class.getSimpleName() + " with .withAssets()");
                 }
             }
-
-            //Log.d(TAG, "typeface=" + result + " " + styleParam);
-            return Typeface.create(face, styleParam);
+            if (defaultTypeface == null) {
+                return Typeface.create(family, styleParam);
+            } else {
+                return Typeface.create(defaultTypeface, styleParam);
+            }
         }
     }
 
@@ -1970,6 +2445,18 @@ public abstract class Sharp {
         if (!sAssumedUnit.equals(unit)) {
             throw new IllegalStateException("Mixing units; SVG contains both " + sAssumedUnit + " and " + unit);
         }
+    }
+
+    public interface DrawableCallback {
+
+        void onDrawableReady(SharpDrawable sharpDrawable);
+
+    }
+
+    public interface PictureCallback {
+
+        void onPictureReady(SharpPicture sharpPicture);
+
     }
 
 }

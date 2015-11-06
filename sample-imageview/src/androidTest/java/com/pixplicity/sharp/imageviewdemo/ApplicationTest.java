@@ -1,4 +1,4 @@
-package com.pixplicity.svgdemo;
+package com.pixplicity.sharp.imageviewdemo;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
