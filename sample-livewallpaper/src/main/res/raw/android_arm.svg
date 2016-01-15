@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 13.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 14948)  -->
+<svg version="1.2" baseProfile="tiny" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 x="0px" y="0px" width="500px" height="500px" viewBox="0 0 500 500" xml:space="preserve">
+<g id="Background" display="none">
+	<rect display="inline" fill="#FFFFFF" stroke="#000000" width="500.001" height="500"/>
+</g>
+<g id="Test_Shirt_Body" display="none">
+	<polygon display="inline" fill="#F495BC" points="279.749,175.574 250.002,211.955 220.252,175.574 112.695,175.574 
+		112.695,489.751 387.166,489.751 387.166,175.574 	"/>
+	<line display="inline" fill="none" stroke="#C9749B" x1="250.002" y1="211.955" x2="250.002" y2="489.751"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="237.914" r="4.574"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="267.561" r="4.574"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="297.206" r="4.573"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="326.852" r="4.573"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="356.498" r="4.574"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="386.142" r="4.572"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="415.789" r="4.572"/>
+	<circle display="inline" fill="#FFFFFF" cx="267.961" cy="445.435" r="4.572"/>
+	<path display="inline" fill="#FFFFFF" d="M267.961,470.509c2.527,0,4.575,2.048,4.575,4.572c0,2.529-2.048,4.576-4.575,4.576
+		c-2.525,0-4.574-2.047-4.574-4.576C263.387,472.557,265.436,470.509,267.961,470.509z"/>
+	<polygon display="inline" fill="#F8BED6" stroke="#C9749B" stroke-width="0.8286" stroke-linejoin="round" points="166.93,254.869 
+		166.93,281.986 185.001,299.837 203.068,281.986 203.068,254.869 	"/>
+	
+		<line display="inline" fill="none" stroke="#C9749B" stroke-width="0.8286" stroke-linejoin="round" x1="203.068" y1="264.921" x2="166.93" y2="264.921"/>
+	<polygon display="inline" fill="#CD80A3" points="250.002,211.955 250.002,220.33 292.215,235.912 299.162,175.535 
+		284.254,175.535 	"/>
+	<polygon display="inline" fill="#CD80A3" points="250.002,211.955 250.002,220.33 207.79,235.912 200.841,175.535 215.75,175.535 	
+		"/>
+	<polygon display="inline" fill="#F8BED6" points="250.002,211.955 286.663,224.622 292.695,175.535 279.749,175.535 	"/>
+	<polygon display="inline" fill="#F8BED6" points="250.002,211.955 213.34,224.622 207.305,175.535 220.254,175.535 	"/>
+</g>
+<g id="Layer_4" display="none">
+	<g display="inline">
+		<rect x="77.529" y="257.514" fill="#F8BED6" width="48.993" height="19.486"/>
+		<path fill="#F495BC" d="M77.529,258.443v-59.952c0-13.086,10.967-23.697,24.498-23.697l0,0c13.529,0,24.498,10.611,24.498,23.697
+			v59.952H77.529z"/>
+		<circle fill="#FFFFFF" cx="115.201" cy="267.356" r="4.184"/>
+	</g>
+</g>
+<g>
+	<rect x="77.49" y="199.654" fill="#9FBF3B" width="49.074" height="97.379"/>
+</g>
+</svg>
